@@ -1,6 +1,6 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Users } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useClubStore } from "@/stores/clubStore";
+import { useClubStore, type Team } from "@/stores/clubStore";
 
 const SidebarComponent = () => {
   const { clubs, openClubs, selectedTeam, toggleClub, selectTeam } =
@@ -36,10 +36,10 @@ const SidebarComponent = () => {
                   {club.teams.map((team) => {
                     const isSelected =
                       selectedTeam?.club === club.name &&
-                      selectedTeam?.team === team;
+                      selectedTeam?.team?.teamId === team.teamId;
                     return (
                       <button
-                        key={team}
+                        key={team.teamId}
                         onClick={() => selectTeam(club.name, team)}
                         className={`w-full p-2 text-left text-sm rounded transition-colors ${
                           isSelected
@@ -47,7 +47,13 @@ const SidebarComponent = () => {
                             : "hover:bg-accent/50"
                         }`}
                       >
-                        {team}
+                        <div className="flex items-center justify-between">
+                          <span>{team.teamName}</span>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Users className="h-3 w-3" />
+                            <span>{team.participants.length}</span>
+                          </div>
+                        </div>
                       </button>
                     );
                   })}
@@ -56,6 +62,7 @@ const SidebarComponent = () => {
             </div>
           ))}
         </div>
+
       </div>
     </div>
   );

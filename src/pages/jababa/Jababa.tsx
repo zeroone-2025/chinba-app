@@ -65,12 +65,7 @@ const Jababa = () => {
 
     return (
       <div>
-        <div className="mb-4 p-4 bg-muted/20 rounded-lg">
-          <p className="text-sm text-muted-foreground">현재 선택된 팀</p>
-          <p className="font-medium text-foreground">
-            {selectedTeam?.club} - {selectedTeam?.team}
-          </p>
-        </div>
+        
 
         <h1 className="text-3xl font-semibold text-foreground mb-6">
           {clubType} 팀 랭킹
@@ -128,7 +123,7 @@ const Jababa = () => {
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-foreground">
                       {row.team}
-                      {selectedTeam?.team === row.team && (
+                      {selectedTeam?.team?.teamName === row.team && (
                         <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary">
                           현재 팀
                         </span>

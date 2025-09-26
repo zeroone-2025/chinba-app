@@ -15,8 +15,8 @@ const Mohat = () => {
   const [editingActivity, setEditingActivity] = useState<MohatActivity | null>(null)
 
   // Get current team score and metadata
-  const teamScore = selectedTeam ? getScore({ clubType: selectedTeam.club, team: selectedTeam.team }) : 0
-  const teamMeta = selectedTeam ? getMeta({ clubType: selectedTeam.club, team: selectedTeam.team }) : null
+  const teamScore = selectedTeam ? getScore({ clubType: selectedTeam.club, team: selectedTeam.team.teamName }) : 0
+  const teamMeta = selectedTeam ? getMeta({ clubType: selectedTeam.club, team: selectedTeam.team.teamName }) : null
 
   // Update activities when selectedTeam changes
   useEffect(() => {
@@ -35,7 +35,7 @@ const Mohat = () => {
 
     if (confirm('정말 삭제할까요?')) {
       const oldScore = activity.score || 0
-      const ctx: Ctx = { clubType: selectedTeam.club, team: selectedTeam.team }
+      const ctx: Ctx = { clubType: selectedTeam.club, team: selectedTeam.team.teamName }
 
       // Track activity sample removal for team statistics
       const dur = activity.duration ?? 60
@@ -57,7 +57,7 @@ const Mohat = () => {
       <div className="mb-4 p-4 bg-muted/20 rounded-lg">
         <p className="text-sm text-muted-foreground">현재 선택된 팀</p>
         <p className="font-medium text-foreground">
-          {selectedTeam?.club} - {selectedTeam?.team}
+          {selectedTeam?.club} - {selectedTeam?.team?.teamName}
         </p>
         {teamMeta && (
           <p className="text-sm text-muted-foreground mt-1">

@@ -1,18 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DEFAULT_ACTIVITIES, recommendByMinutes } from "@/stores";
 
 export type Ctx = { clubType: string; team: string };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// @ts-ignore
-export default function RecommendSection({ ctx }: { ctx: Ctx }) {
-  // ctx parameter reserved for future context-aware recommendations
+interface RecommendSectionProps {
+  ctx: Ctx;
+  selectedFreeTime?: {
+    day: string;
+    startHour: number;
+    duration: number;
+  } | null;
+}
+
+export default function RecommendSection({ ctx, selectedFreeTime }: RecommendSectionProps) {
   const [minutes, setMinutes] = useState<number>(30);
+
+  // 선택된 공강시간이 있으면 해당 시간으로 설정, 없으면 기본값으로 리셋
+  useEffect(() => {
+    if (selectedFreeTime) {
+      setMinutes(selectedFreeTime.duration * 60);
+    } else {
+      setMinutes(30);
+    }
+  }, [selectedFreeTime]);
+
   const recommendedActivities = recommendByMinutes(DEFAULT_ACTIVITIES, minutes);
 
   return (
     <section>
       <h2 className="text-xl font-semibold mb-2">활동 추천</h2>
+
+      {selectedFreeTime && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="text-sm font-medium text-blue-800">
+            선택된 공강시간: {selectedFreeTime.day}요일 {selectedFreeTime.startHour}:00-{selectedFreeTime.startHour + selectedFreeTime.duration}:00 ({selectedFreeTime.duration}시간)
+          </div>
+        </div>
+      )}
 
       <div className="mb-6">
         <label className="block text-sm font-medium mb-2">
