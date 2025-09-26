@@ -1,3 +1,4 @@
+export type Difficulty = 'easy' | 'medium' | 'hard';
 export type TimePref = { startHour: number; endHour: number; weight: number };
 
 export type Activity = {
@@ -10,4 +11,6 @@ export type Activity = {
   location?: string;
   description?: string;
   timePreferences?: TimePref[];
+  score?: number;
+  difficulty?: Difficulty;
 };

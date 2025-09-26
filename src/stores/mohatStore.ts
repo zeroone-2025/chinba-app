@@ -6,8 +6,10 @@ export interface MohatActivity {
   date: string
   title: string
   headcount: number
+  duration?: number
   description?: string
   imageUrl?: string
+  score: number
 }
 
 interface SelectedTeam {
@@ -18,6 +20,9 @@ interface SelectedTeam {
 interface MohatState {
   activities: MohatActivity[]
   addActivity: (activity: Omit<MohatActivity, 'id'>, selectedTeam: SelectedTeam) => void
+  updateActivity: (id: string, activity: Partial<MohatActivity>, selectedTeam: SelectedTeam) => void
+  removeActivity: (id: string, selectedTeam: SelectedTeam) => void
+  findById: (id: string, selectedTeam: SelectedTeam) => MohatActivity | undefined
   getActivities: (selectedTeam: SelectedTeam) => MohatActivity[]
   setSelectedTeam: (selectedTeam: SelectedTeam) => void
 }
@@ -69,6 +74,43 @@ export const useMohatStore = create<MohatState>()((set) => ({
       ...state,
       activities: [newActivity, ...state.activities]
     }))
+  },
+
+  updateActivity: (id, activityData, selectedTeam) => {
+    // Update team-specific store
+    const teamStore = getTeamStore(selectedTeam)
+    teamStore.setState((state) => ({
+      activities: state.activities.map(activity =>
+        activity.id === id ? { ...activity, ...activityData } : activity
+      )
+    }))
+
+    // Update current activities if this is the active team
+    set((state) => ({
+      ...state,
+      activities: state.activities.map(activity =>
+        activity.id === id ? { ...activity, ...activityData } : activity
+      )
+    }))
+  },
+
+  removeActivity: (id, selectedTeam) => {
+    // Remove from team-specific store
+    const teamStore = getTeamStore(selectedTeam)
+    teamStore.setState((state) => ({
+      activities: state.activities.filter(activity => activity.id !== id)
+    }))
+
+    // Update current activities if this is the active team
+    set((state) => ({
+      ...state,
+      activities: state.activities.filter(activity => activity.id !== id)
+    }))
+  },
+
+  findById: (id, selectedTeam) => {
+    const teamStore = getTeamStore(selectedTeam)
+    return teamStore.getState().activities.find(activity => activity.id === id)
   },
 
   getActivities: (selectedTeam) => {

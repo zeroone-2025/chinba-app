@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, ChevronDown } from 'lucide-react'
-import { useMohatStore } from '@/stores/mohatStore'
+import { useMohatStore, type MohatActivity } from '@/stores/mohatStore'
 import { SCORED_ACTIVITIES, difficultyScore } from '@/stores/activities'
 import { useTeamStore, type Ctx } from '@/stores/teamStore'
 
@@ -9,15 +9,16 @@ interface SelectedTeam {
   team: string
 }
 
-interface AddActivityModalProps {
+interface EditActivityModalProps {
   isOpen: boolean
   onClose: () => void
+  activity: MohatActivity
   selectedTeam: SelectedTeam | null
 }
 
-const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalProps) => {
-  const addActivity = useMohatStore((state) => state.addActivity)
-  const { addScore, addActivitySample } = useTeamStore()
+const EditActivityModal = ({ isOpen, onClose, activity, selectedTeam }: EditActivityModalProps) => {
+  const updateActivity = useMohatStore((state) => state.updateActivity)
+  const { addScore, updateActivitySample } = useTeamStore()
   const [formData, setFormData] = useState({
     date: '',
     title: '',
@@ -31,6 +32,20 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [selectedActivityScore, setSelectedActivityScore] = useState<number | null>(null)
 
+  // Pre-fill form when modal opens or activity changes
+  useEffect(() => {
+    if (isOpen && activity) {
+      setFormData({
+        date: activity.date,
+        title: activity.title,
+        headcount: activity.headcount.toString(),
+        duration: activity.duration?.toString() || '',
+        description: activity.description || '',
+      })
+      setImagePreview(activity.imageUrl || '')
+    }
+  }, [isOpen, activity])
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
@@ -39,13 +54,13 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
     }
   }
 
-  const handleCatalogSelect = (activity: typeof SCORED_ACTIVITIES[0]) => {
+  const handleCatalogSelect = (catalogActivity: typeof SCORED_ACTIVITIES[0]) => {
     setFormData(prev => ({
       ...prev,
-      title: activity.name,
-      description: activity.description || ''
+      title: catalogActivity.name,
+      description: catalogActivity.description || ''
     }))
-    setSelectedActivityScore(activity.score || 0)
+    setSelectedActivityScore(catalogActivity.score || 0)
     setShowCatalog(false)
   }
 
@@ -82,7 +97,10 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
     if (selectedActivityScore !== null) {
       return selectedActivityScore
     }
-    // Calculate score based on form data if no catalog activity was selected
+    // Use existing score if available, or calculate based on form data
+    if (activity.score) {
+      return activity.score
+    }
     return difficultyScore({
       id: 'temp',
       name: activityData.title || '',
@@ -97,9 +115,7 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
 
     if (!validateForm() || !selectedTeam) return
 
-    // Note: Image file is converted to Object URL for preview only
-    // On page refresh, images will not persist as we're not storing actual file data
-    const baseActivityData = {
+    const baseUpdatedData = {
       date: formData.date,
       title: formData.title.trim(),
       headcount: parseInt(formData.headcount),
@@ -108,32 +124,29 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
       ...(imagePreview && { imageUrl: imagePreview })
     }
 
-    const score = ensureScore(baseActivityData)
-    const activityData = { ...baseActivityData, score }
+    const oldScore = activity.score || 0
+    const newScore = ensureScore(baseUpdatedData)
+    const updatedData: Partial<MohatActivity> = { ...baseUpdatedData, score: newScore }
 
     const ctx: Ctx = { clubType: selectedTeam.club, team: selectedTeam.team }
 
-    // Track activity samples for team statistics
-    const dur = activityData.duration ?? 60 // default 60 minutes if not specified
-    const ppl = parseInt(formData.headcount)
+    // Track activity sample changes for team statistics
+    const oldDur = activity.duration ?? 60
+    const oldPpl = activity.headcount
+    const newDur = updatedData.duration ?? oldDur
+    const newPpl = parseInt(formData.headcount)
 
-    addActivity(activityData, selectedTeam)
-    addScore(ctx, score)
-    addActivitySample(ctx, dur, ppl)
+    updateActivity(activity.id, updatedData, selectedTeam)
+    addScore(ctx, newScore - oldScore) // Add the difference in score
+    updateActivitySample(ctx, oldDur, oldPpl, newDur, newPpl)
 
-    // Reset form
-    setFormData({ date: '', title: '', headcount: '', duration: '', description: '' })
-    setImageFile(null)
-    setImagePreview('')
-    setErrors({})
-    setSelectedActivityScore(null)
-    onClose()
+    handleClose()
   }
 
   const handleClose = () => {
     setFormData({ date: '', title: '', headcount: '', duration: '', description: '' })
     setImageFile(null)
-    if (imagePreview) {
+    if (imagePreview && imagePreview !== activity.imageUrl) {
       URL.revokeObjectURL(imagePreview)
     }
     setImagePreview('')
@@ -143,16 +156,34 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
     onClose()
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      handleClose()
+    }
+  }
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      handleClose()
+    }
+  }
+
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={handleBackdropClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={-1}
+    >
       <div className="bg-background rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">활동 추가</h2>
+          <h2 className="text-lg font-semibold">활동 수정</h2>
           <button
             onClick={handleClose}
             className="p-1 hover:bg-muted rounded-sm transition-colors"
+            aria-label="닫기"
           >
             <X className="w-5 h-5" />
           </button>
@@ -160,12 +191,12 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label htmlFor="date" className="block text-sm font-medium mb-1">
+            <label htmlFor="edit-date" className="block text-sm font-medium mb-1">
               날짜 *
             </label>
             <input
               type="date"
-              id="date"
+              id="edit-date"
               name="date"
               value={formData.date}
               onChange={handleInputChange}
@@ -176,7 +207,7 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label htmlFor="title" className="block text-sm font-medium">
+              <label htmlFor="edit-title" className="block text-sm font-medium">
                 활동명 *
               </label>
               <button
@@ -191,29 +222,29 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
 
             {showCatalog && (
               <div className="mb-2 border rounded-md max-h-32 overflow-y-auto bg-muted/10">
-                {SCORED_ACTIVITIES.map((activity) => (
+                {SCORED_ACTIVITIES.map((catalogActivity) => (
                   <button
-                    key={activity.id}
+                    key={catalogActivity.id}
                     type="button"
-                    onClick={() => handleCatalogSelect(activity)}
+                    onClick={() => handleCatalogSelect(catalogActivity)}
                     className="w-full text-left p-2 text-sm hover:bg-muted/20 border-b border-border/20 last:border-b-0"
                   >
                     <div className="flex items-center justify-between">
-                      <div className="font-medium">{activity.name}</div>
-                      {activity.difficulty && (
+                      <div className="font-medium">{catalogActivity.name}</div>
+                      {catalogActivity.difficulty && (
                         <span className={`px-1.5 py-0.5 text-xs rounded-full text-white ${
-                          activity.difficulty === 'hard' ? 'bg-red-500' :
-                          activity.difficulty === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                          catalogActivity.difficulty === 'hard' ? 'bg-red-500' :
+                          catalogActivity.difficulty === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
                         }`}>
-                          {activity.difficulty === 'hard' ? 'HARD' :
-                           activity.difficulty === 'medium' ? 'MED' : 'EASY'}
+                          {catalogActivity.difficulty === 'hard' ? 'HARD' :
+                           catalogActivity.difficulty === 'medium' ? 'MED' : 'EASY'}
                         </span>
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {activity.duration}분 · {activity.category}
-                      {activity.score && (
-                        <span className="ml-1">· {activity.score}점</span>
+                      {catalogActivity.duration}분 · {catalogActivity.category}
+                      {catalogActivity.score && (
+                        <span className="ml-1">· {catalogActivity.score}점</span>
                       )}
                     </div>
                   </button>
@@ -223,7 +254,7 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
 
             <input
               type="text"
-              id="title"
+              id="edit-title"
               name="title"
               value={formData.title}
               onChange={handleInputChange}
@@ -234,12 +265,12 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
           </div>
 
           <div>
-            <label htmlFor="headcount" className="block text-sm font-medium mb-1">
+            <label htmlFor="edit-headcount" className="block text-sm font-medium mb-1">
               참여인원수 *
             </label>
             <input
               type="number"
-              id="headcount"
+              id="edit-headcount"
               name="headcount"
               value={formData.headcount}
               onChange={handleInputChange}
@@ -251,12 +282,12 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
           </div>
 
           <div>
-            <label htmlFor="duration" className="block text-sm font-medium mb-1">
+            <label htmlFor="edit-duration" className="block text-sm font-medium mb-1">
               소요시간 (분)
             </label>
             <input
               type="number"
-              id="duration"
+              id="edit-duration"
               name="duration"
               value={formData.duration}
               onChange={handleInputChange}
@@ -268,12 +299,12 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
           </div>
 
           <div>
-            <label htmlFor="image" className="block text-sm font-medium mb-1">
+            <label htmlFor="edit-image" className="block text-sm font-medium mb-1">
               사진
             </label>
             <input
               type="file"
-              id="image"
+              id="edit-image"
               accept="image/*"
               onChange={handleImageChange}
               className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -290,11 +321,11 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium mb-1">
+            <label htmlFor="edit-description" className="block text-sm font-medium mb-1">
               설명
             </label>
             <textarea
-              id="description"
+              id="edit-description"
               name="description"
               value={formData.description}
               onChange={handleInputChange}
@@ -316,7 +347,7 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
               type="submit"
               className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
             >
-              제출
+              수정
             </button>
           </div>
         </form>
@@ -325,4 +356,4 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
   )
 }
 
-export default AddActivityModal
+export default EditActivityModal

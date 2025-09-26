@@ -594,3 +594,49 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
 
 export const recommendByMinutes = (list: Activity[], minutes: number) =>
   list.filter(a => a.duration <= minutes).sort((a, b) => a.duration - b.duration);
+
+const hoursWindows = (a: Activity) =>
+  (a.timePreferences?.reduce((sum, p) => sum + Math.max(0, p.endHour - p.startHour), 0)) ?? 0;
+
+export const difficultyScore = (a: Activity) => {
+  // ① 기본: 소요시간
+  let s =
+    a.duration <= 30 ? 30 :
+    a.duration <= 60 ? 50 :
+    a.duration <= 90 ? 70 :
+    a.duration <= 120 ? 90 : 110;
+
+  // ② 팀 구성 난도
+  if (a.minParticipants >= 3) s += 10;
+  if (a.minParticipants >= 5) s += 10;        // 3명 이상 +10, 5명 이상 추가 +10
+  if (a.maxParticipants === 1) s -= 10;       // 완전 솔로면 -10
+
+  // ③ 조율 난도(가능 시간대가 좁을수록 +)
+  const avail = hoursWindows(a);              // 총 가능 시간(시간)
+  if (avail > 0) {
+    if (avail <= 2) s += 15;
+    else if (avail <= 4) s += 8;
+    else if (avail <= 6) s += 4;
+  }
+
+  // ④ 장소 난도(이동 필요 추정)
+  const offCampusHints = ['보드게임카페','영화관','볼링장','PC방','문화센터','포토부스','맛집','주점','카페'];
+  if (a.location && offCampusHints.some(k => a.location!.includes(k))) s += 10;
+
+  // ⑤ 카테고리 보정(선택)
+  if (a.category === 'study') s += 5;
+  if (a.category === 'exercise') s += 5;
+
+  // 하한/상한 클램프
+  s = Math.max(10, Math.min(150, s));
+  return s;
+};
+
+const toDifficulty = (score: number): import('@/types').Difficulty =>
+  score >= 100 ? 'hard' : score >= 60 ? 'medium' : 'easy';
+
+export const SCORED_ACTIVITIES: Activity[] =
+  DEFAULT_ACTIVITIES.map(a => {
+    const score = difficultyScore(a);
+    return { ...a, score, difficulty: toDifficulty(score) };
+  });
