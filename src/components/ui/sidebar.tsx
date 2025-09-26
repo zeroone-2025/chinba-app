@@ -127,9 +127,9 @@ const SidebarMenuButton = React.forwardRef<
   React.ComponentProps<"button"> & {
     asChild?: boolean
     isActive?: boolean
-    tooltip?: string | React.ComponentProps<any>
+    tooltip?: string | React.ComponentProps<'div'>
   }
->(({ asChild = false, isActive = false, className, ...props }, ref) => {
+>(({ isActive = false, className, ...props }, ref) => {
   return (
     <button
       ref={ref}
@@ -174,7 +174,7 @@ const SidebarMenuSubButton = React.forwardRef<
     size?: "sm" | "md"
     isActive?: boolean
   }
->(({ asChild = false, size = "md", isActive, className, ...props }, ref) => {
+>(({ size = "md", isActive, className, ...props }, ref) => {
   return (
     <a
       ref={ref}

@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import SidebarComponent from './Sidebar'
 import TabNavigation from './TabNavigation'
 
