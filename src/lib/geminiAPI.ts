@@ -156,10 +156,10 @@ export async function analyzeTimetableImage(file: File): Promise<ExtractedTimeta
         throw new Error('Invalid data structure: participants array is missing');
       }
 
-      // 각 참가자 데이터 검증 및 정규화
+      // 각 참가자 데이터 검증 및 정규화 (ID는 나중에 할당됨)
       parsedData.participants = parsedData.participants.map((participant, index) => {
         return {
-          id: participant.id || `S${String(index + 1).padStart(3, '0')}`,
+          id: participant.id || `TEMP_${index}`, // 임시 ID, 나중에 전역 ID로 교체됨
           name: participant.name || `학생${index + 1}`,
           timetable: (participant.timetable || []).map(entry => ({
             day: entry.day || '',
@@ -202,20 +202,12 @@ export async function analyzeTimetableImage(file: File): Promise<ExtractedTimeta
  */
 export async function analyzeMutipleTimetableImages(files: File[]): Promise<ExtractedTimetableData> {
   const allParticipants: ExtractedTimetableData['participants'] = [];
-  let participantIdCounter = 1;
 
   for (const file of files) {
     try {
       const result = await analyzeTimetableImage(file);
-
-      // 참가자 ID를 재할당하여 중복 방지
-      const processedParticipants = result.participants.map(participant => ({
-        ...participant,
-        id: `G${String(participantIdCounter++).padStart(3, '0')}`,
-        name: participant.name || `학생${participantIdCounter - 1}`
-      }));
-
-      allParticipants.push(...processedParticipants);
+      // ID는 나중에 전역 카운터에서 할당되므로 여기서는 그대로 추가
+      allParticipants.push(...result.participants);
     } catch (error) {
       console.error(`파일 ${file.name} 분석 실패:`, error);
       // 실패한 파일은 건너뛰고 계속 진행

@@ -15,6 +15,7 @@ interface FreeTimeBlock {
 const Mannaja = () => {
   const selectedTeam = useClubStore((state) => state.selectedTeam);
   const addParticipantsToCurrentTeam = useClubStore((state) => state.addParticipantsToCurrentTeam);
+  const getNextParticipantId = useClubStore((state) => state.getNextParticipantId);
   const [selectedFreeTime, setSelectedFreeTime] = useState<FreeTimeBlock | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
@@ -37,14 +38,26 @@ const Mannaja = () => {
     }
 
     try {
-      console.log('현재 선택된 팀:', selectedTeam);
+      console.log('현재 선택된 팀:', selectedTeam.team.teamName);
       console.log('추가할 참가자들:', data.participants);
 
+      // 각 참가자에게 전역 고유 ID 할당
+      const participantsWithUniqueIds = data.participants.map((participant, index) => {
+        const uniqueId = getNextParticipantId();
+        return {
+          ...participant,
+          id: uniqueId,
+          name: participant.name || `학생${uniqueId.slice(1)}`
+        };
+      });
+
+      console.log('고유 ID가 할당된 참가자들:', participantsWithUniqueIds);
+
       // 추출된 참가자들을 현재 팀에 추가
-      addParticipantsToCurrentTeam(data.participants);
+      addParticipantsToCurrentTeam(participantsWithUniqueIds);
 
       console.log('참가자 추가 완료');
-      alert(`${data.participants.length}명의 참가자가 "${selectedTeam.team.teamName}" 팀에 추가되었습니다!`);
+      alert(`${participantsWithUniqueIds.length}명의 참가자가 "${selectedTeam.team.teamName}" 팀에 추가되었습니다!`);
     } catch (error) {
       console.error('참가자 추가 실패:', error);
       alert(`참가자 추가에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
