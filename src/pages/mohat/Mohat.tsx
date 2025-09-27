@@ -21,7 +21,10 @@ const Mohat = () => {
   // Update activities when selectedTeam changes
   useEffect(() => {
     if (selectedTeam) {
-      setSelectedTeam(selectedTeam)
+      setSelectedTeam({
+        club: selectedTeam.club,
+        team: selectedTeam.team.teamName
+      })
     }
   }, [selectedTeam, setSelectedTeam])
 
@@ -41,7 +44,10 @@ const Mohat = () => {
       const dur = activity.duration ?? 60
       const ppl = activity.headcount
 
-      removeActivity(activity.id, selectedTeam)
+      removeActivity(activity.id, {
+        club: selectedTeam.club,
+        team: selectedTeam.team.teamName
+      })
       addScore(ctx, -oldScore) // Subtract the score
       removeActivitySample(ctx, dur, ppl)
     }
@@ -61,7 +67,7 @@ const Mohat = () => {
         </p>
         {teamMeta && (
           <p className="text-sm text-muted-foreground mt-1">
-            팀 전체 인원: {teamMeta.members}명
+            팀 전체 인원: {selectedTeam?.team?.teamSize}명
           </p>
         )}
       </div>
@@ -159,7 +165,10 @@ const Mohat = () => {
       <AddActivityModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        selectedTeam={selectedTeam}
+        selectedTeam={selectedTeam ? {
+          club: selectedTeam.club,
+          team: selectedTeam.team.teamName
+        } : null}
       />
 
       {editingActivity && (
@@ -167,7 +176,10 @@ const Mohat = () => {
           isOpen={isEditModalOpen}
           onClose={handleEditModalClose}
           activity={editingActivity}
-          selectedTeam={selectedTeam}
+          selectedTeam={selectedTeam ? {
+            club: selectedTeam.club,
+            team: selectedTeam.team.teamName
+          } : null}
         />
       )}
     </div>

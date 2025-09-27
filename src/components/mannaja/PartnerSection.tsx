@@ -281,6 +281,7 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
             participants={participants}
             selectedParticipantIds={selectedParticipants}
             getIntensityColor={getIntensityColor}
+            highlightedFreeTime={selectedFreeTime}
           />
           <div className="mt-2 text-xs text-muted-foreground">
             * 색상이 진할수록 더 많은 팀원이 동시에 수업이 있는 시간입니다.

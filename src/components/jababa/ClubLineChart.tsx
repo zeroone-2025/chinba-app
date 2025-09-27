@@ -6,8 +6,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
-  LabelList
+  Legend
 } from 'recharts'
 
 type Metric = '점수' | '활동 횟수' | '총 참여시간' | '참여율';
@@ -29,11 +28,11 @@ const PALETTE = [
   '#e11d48', // rose
 ]
 
-const colorOf = (team: string, i: number): string =>
+const colorOf = (i: number): string =>
   PALETTE[i % PALETTE.length]
 
 // Custom Tooltip Component
-const MetricTooltip = ({ active, payload, label, metric }: {
+const MetricTooltip = ({ active, payload, metric }: {
   active?: boolean;
   payload?: any[];
   label?: string;
@@ -96,7 +95,7 @@ const ClubLineChart = ({ data, teams, metric, maxVal }: ClubLineChartProps) => {
             key={team}
             type="monotone"
             dataKey={team}
-            stroke={colorOf(team, idx)}
+            stroke={colorOf(idx)}
             strokeWidth={2}
             dot={{ r: 3 }}
             activeDot={{ r: 5 }}

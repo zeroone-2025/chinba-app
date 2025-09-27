@@ -34,6 +34,11 @@ interface TimetableGridProps {
   onSlotMouseUp?: (day: string, timeSlot: string) => void;
   showFreeTimeText?: boolean;
   getIntensityColor?: (count: number, day?: string, timeSlot?: string) => string;
+  highlightedFreeTime?: {
+    day: string;
+    startHour: number;
+    duration: number;
+  } | null;
 }
 
 const defaultGetIntensityColor = (count: number) => {
@@ -57,7 +62,8 @@ export default function TimetableGrid({
   onSlotMouseEnter,
   onSlotMouseUp,
   showFreeTimeText = false,
-  getIntensityColor = defaultGetIntensityColor
+  getIntensityColor = defaultGetIntensityColor,
+  highlightedFreeTime
 }: TimetableGridProps) {
   // 병합된 시간표 계산
   const mergedTimetable = useMemo(() => {
@@ -115,6 +121,15 @@ export default function TimetableGrid({
             const slot = mergedTimetable.get(slotKey);
             const count = slot?.count || 0;
 
+            // 강조 표시 여부 확인
+            const isHighlighted = highlightedFreeTime &&
+              highlightedFreeTime.day === day &&
+              (() => {
+                const slotHour = parseInt(timeSlot.split(':')[0]);
+                const endHour = highlightedFreeTime.startHour + highlightedFreeTime.duration;
+                return slotHour >= highlightedFreeTime.startHour && slotHour < endHour;
+              })();
+
             return (
               <div
                 key={`${day}-${timeSlot}`}
@@ -124,7 +139,9 @@ export default function TimetableGrid({
                 onMouseUp={() => onSlotMouseUp?.(day, timeSlot)}
                 className={`p-2 text-xs border-r last:border-r-0 min-h-[40px] ${getIntensityColor(count, day, timeSlot)} ${
                   onSlotClick || onSlotMouseDown ? 'cursor-pointer' : ''
-                } select-none`}
+                } select-none ${
+                  isHighlighted ? 'ring-4 ring-green-400 ring-opacity-70 z-10 relative' : ''
+                }`}
                 title={slot ? `${count}명: ${slot.participants.join(', ')}` : ''}
               >
                 {count > 0 && (
