@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Users, Plus } from "lucide-react";
+import { Users, Plus, Trash2 } from "lucide-react";
 import { useClubStore } from "@/stores/clubStore";
 import TimetableGrid, { DAYS, type TimeSlot } from "@/components/common/TimetableGrid";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
   const selectedTeam = useClubStore((state) => state.selectedTeam);
   const participants = useClubStore((state) => state.selectedTeam?.team.participants || []);
   const personalSchedulesByMember = useClubStore((state) => state.personalSchedulesByMember);
-  const { setSelectedParticipants: setStoreSelectedParticipants, getSelectedParticipants, addPersonalSchedule } = useClubStore();
+  const { setSelectedParticipants: setStoreSelectedParticipants, getSelectedParticipants, addPersonalSchedule, removeParticipantFromCurrentTeam } = useClubStore();
 
   console.log('PartnerSection 렌더링:', {
     selectedTeam: selectedTeam?.team.teamName,
@@ -97,6 +97,23 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
   const handlePersonalScheduleSubmit = (schedule: Omit<PersonalSchedule, 'id' | 'memberId'>) => {
     addPersonalSchedule(modalMemberId, schedule);
     setModalOpen(false);
+  };
+
+  // 참가자 삭제 핸들러
+  const handleDeleteParticipant = (participantId: string, participantName: string) => {
+    const confirmDelete = window.confirm(
+      `"${participantName}" 참가자를 정말 삭제하시겠습니까?\n\n삭제하면 해당 참가자의 개인일정도 모두 삭제됩니다.`
+    );
+
+    if (confirmDelete) {
+      try {
+        removeParticipantFromCurrentTeam(participantId);
+        console.log(`참가자 ${participantName} (${participantId}) 삭제 완료`);
+      } catch (error) {
+        console.error('참가자 삭제 실패:', error);
+        alert('참가자 삭제에 실패했습니다.');
+      }
+    }
   };
 
   // 선택된 참가자들의 개인일정 모음
@@ -226,18 +243,30 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
                       ID: {participant.id} • {new Set(participant.timetable.map(t => t.subject)).size}개 과목
                     </div>
                   </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={(e: React.MouseEvent) => {
-                      e.stopPropagation();
-                      handleAddPersonalSchedule(participant.id, participant.name);
-                    }}
-                    className="ml-2"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    개인 일정
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        handleAddPersonalSchedule(participant.id, participant.name);
+                      }}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      개인 일정
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        handleDeleteParticipant(participant.id, participant.name);
+                      }}
+                      className="px-2"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}

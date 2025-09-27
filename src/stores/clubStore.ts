@@ -57,6 +57,7 @@ interface ClubState {
   selectedTeam: SelectedTeam | null
   selectedParticipants: Record<string, string[]> // teamId -> participantIds
   personalSchedulesByMember: Record<string, PersonalSchedule[]> // memberId -> PersonalSchedule[]
+  globalParticipantCounter: number // 전역 참가자 ID 카운터
   toggleClub: (clubName: string) => void
   selectTeam: (club: string, team: Team) => void
   setSelectedParticipants: (teamId: string, participantIds: string[]) => void
@@ -65,6 +66,8 @@ interface ClubState {
   removePersonalSchedule: (memberId: string, scheduleId: string) => void
   getPersonalSchedules: (memberId: string) => PersonalSchedule[]
   addParticipantsToCurrentTeam: (participants: Participant[]) => void
+  removeParticipantFromCurrentTeam: (participantId: string) => void
+  getNextParticipantId: () => string
 }
 
 // Transform timetables data to club structure
@@ -104,6 +107,7 @@ export const useClubStore = create<ClubState>()(
   },
   selectedParticipants: {},
   personalSchedulesByMember: {}, // 개인일정 상태 초기화
+  globalParticipantCounter: 1000, // G1000부터 시작
   toggleClub: (clubName: string) => set((state) => ({
     openClubs: state.openClubs.includes(clubName)
       ? state.openClubs.filter((name) => name !== clubName)
@@ -208,7 +212,79 @@ export const useClubStore = create<ClubState>()(
     console.log('업데이트된 팀 참가자 수:', newState.selectedTeam?.team.participants.length);
     console.log('새로운 참가자들:', newState.selectedTeam?.team.participants.map(p => p.name));
     return newState;
-  })
+  }),
+  // 현재 선택된 팀에서 참가자 삭제
+  removeParticipantFromCurrentTeam: (participantId: string) => set((state) => {
+    console.log('=== removeParticipantFromCurrentTeam 시작 ===');
+    console.log('삭제할 참가자 ID:', participantId);
+    console.log('현재 선택된 팀:', state.selectedTeam?.team.teamName);
+
+    if (!state.selectedTeam) {
+      console.error('선택된 팀이 없음');
+      return state;
+    }
+
+    const updatedClubs = state.clubs.map(club => {
+      if (club.name !== state.selectedTeam!.club) return club;
+
+      const updatedTeams = club.teams.map(team => {
+        if (team.teamId !== state.selectedTeam!.team.teamId) return team;
+
+        console.log('삭제 전 참가자 수:', team.participants.length);
+
+        // 해당 ID의 참가자 제거
+        const updatedParticipants = team.participants.filter(p => p.id !== participantId);
+
+        console.log('삭제 후 참가자 수:', updatedParticipants.length);
+
+        return {
+          ...team,
+          participants: updatedParticipants,
+          teamSize: updatedParticipants.length
+        };
+      });
+
+      return { ...club, teams: updatedTeams };
+    });
+
+    // selectedTeam도 업데이트
+    const updatedSelectedTeam = updatedClubs
+      .find(club => club.name === state.selectedTeam!.club)
+      ?.teams.find(team => team.teamId === state.selectedTeam!.team.teamId);
+
+    // 해당 참가자의 개인일정도 삭제
+    const updatedPersonalSchedules = { ...state.personalSchedulesByMember };
+    delete updatedPersonalSchedules[participantId];
+
+    // 선택된 참가자 목록에서도 제거
+    const updatedSelectedParticipants = { ...state.selectedParticipants };
+    Object.keys(updatedSelectedParticipants).forEach(teamId => {
+      updatedSelectedParticipants[teamId] = updatedSelectedParticipants[teamId].filter(id => id !== participantId);
+    });
+
+    console.log('=== removeParticipantFromCurrentTeam 완료 ===');
+
+    return {
+      ...state,
+      clubs: updatedClubs,
+      selectedTeam: updatedSelectedTeam ? {
+        club: state.selectedTeam.club,
+        team: updatedSelectedTeam
+      } : state.selectedTeam,
+      personalSchedulesByMember: updatedPersonalSchedules,
+      selectedParticipants: updatedSelectedParticipants
+    };
+  }),
+  // 전역 고유 참가자 ID 생성
+  getNextParticipantId: () => {
+    const state = get();
+    const newId = `G${String(state.globalParticipantCounter).padStart(3, '0')}`;
+    set((state) => ({
+      ...state,
+      globalParticipantCounter: state.globalParticipantCounter + 1
+    }));
+    return newId;
+  }
 }),
 {
   name: 'club-store',
@@ -216,7 +292,8 @@ export const useClubStore = create<ClubState>()(
     clubs: state.clubs,
     selectedTeam: state.selectedTeam,
     selectedParticipants: state.selectedParticipants,
-    personalSchedulesByMember: state.personalSchedulesByMember
+    personalSchedulesByMember: state.personalSchedulesByMember,
+    globalParticipantCounter: state.globalParticipantCounter
   })
 }
 ))
