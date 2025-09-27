@@ -37,6 +37,7 @@ interface TimetableGridProps {
   onSlotMouseEnter?: (day: string, timeSlot: string) => void;
   onSlotMouseUp?: (day: string, timeSlot: string) => void;
   showFreeTimeText?: boolean;
+  showFree?: boolean; // 공강 시각적 표시 옵션 추가
   getIntensityColor?: (count: number, day?: string, timeSlot?: string) => string;
   highlightedFreeTime?: {
     day: string;
@@ -67,6 +68,7 @@ export default function TimetableGrid({
   onSlotMouseEnter,
   onSlotMouseUp,
   showFreeTimeText = false,
+  showFree = false, // 공강 표시 기본값
   getIntensityColor = defaultGetIntensityColor,
   highlightedFreeTime
 }: TimetableGridProps) {
@@ -174,7 +176,11 @@ export default function TimetableGrid({
                 onMouseDown={() => onSlotMouseDown?.(day, timeSlot)}
                 onMouseEnter={() => onSlotMouseEnter?.(day, timeSlot)}
                 onMouseUp={() => onSlotMouseUp?.(day, timeSlot)}
-                className={`p-2 text-xs border-r last:border-r-0 min-h-[40px] ${getIntensityColor(count, day, timeSlot)} ${
+                className={`p-2 text-xs border-r last:border-r-0 min-h-[40px] ${
+                  count === 0 && showFree
+                    ? 'bg-green-100' // 공강일 때 연녹색 배경
+                    : getIntensityColor(count, day, timeSlot)
+                } ${
                   onSlotClick || onSlotMouseDown ? 'cursor-pointer' : ''
                 } select-none ${
                   isHighlighted ? 'ring-4 ring-green-400 ring-opacity-70 z-10 relative' : ''
@@ -186,8 +192,8 @@ export default function TimetableGrid({
                     {count}
                   </div>
                 )}
-                {count === 0 && showFreeTimeText && (
-                  <div className="text-center text-green-700 text-xs">
+                {count === 0 && (showFreeTimeText || showFree) && (
+                  <div className="text-center text-green-700 text-xs font-medium whitespace-nowrap">
                     공강
                   </div>
                 )}

@@ -340,6 +340,7 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
                   <span className="text-xs">{count}명</span>
                 </div>
               ))}
+              <span className="ml-2 inline-block rounded bg-green-100 px-2 py-0.5 text-[11px] text-green-700">공강</span>
             </div>
           </div>
 
@@ -350,6 +351,7 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
             personalSchedules={relevantPersonalSchedules}
             getIntensityColor={getIntensityColor}
             highlightedFreeTime={selectedFreeTime}
+            showFree={true}
           />
           <div className="mt-2 text-xs text-muted-foreground">
             * 색상이 진할수록 더 많은 팀원이 동시에 수업이 있는 시간입니다.
