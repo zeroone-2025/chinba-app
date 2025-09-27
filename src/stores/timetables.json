@@ -2,7 +2,7 @@
   "T001": {
     "teamId": "T001",
     "teamName": "재산 1조팀",
-    "groupName": "NextOne",
+    "clubName": "NextOne",
     "teamSize": 4,
     "participants": [
       {
@@ -316,7 +316,7 @@
   "T002": {
     "teamId": "T002",
     "teamName": "불사조팀",
-    "groupName": "NextOne",
+    "clubName": "NextOne",
     "teamSize": 4,
     "participants": [
       {
@@ -696,7 +696,7 @@
   "T003": {
     "teamId": "T003",
     "teamName": "홍길동팀",
-    "groupName": "NextOne",
+    "clubName": "NextOne",
     "teamSize": 3,
     "participants": [
       {

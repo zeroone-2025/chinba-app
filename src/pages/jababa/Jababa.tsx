@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useClubStore } from "@/stores/clubStore";
+import { useClubStore, getClubName } from "@/stores/clubStore";
 import { useTeamStore } from "@/stores/teamStore";
 import { ClubBarChart } from "@/components/jababa/ClubBarChart";
 import { cn } from "@/lib/utils";
@@ -24,8 +24,8 @@ const Jababa = () => {
 
   try {
 
-    // Get current clubType from selectedTeam, fallback to "개발동아리"
-    const clubType = selectedTeam?.club || "개발동아리";
+    // Get current clubType from selectedTeam, fallback to dev club
+    const clubType = selectedTeam?.club || getClubName('dev');
 
     // Get all scores from the store
     const allScores = teamStore.scores || {};

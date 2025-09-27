@@ -1,6 +1,25 @@
 import { create } from 'zustand'
 import timetablesData from './timetables.json'
 
+// Centralized club names mapping
+export const CLUB_NAMES = {
+  dev: 'NextOne',
+  design: 'ZeroOne',
+  plan: 'Prior'
+} as const
+
+export type ClubKey = keyof typeof CLUB_NAMES
+
+// Helper function to get club name
+export function getClubName(key: ClubKey): string {
+  return CLUB_NAMES[key]
+}
+
+// Helper function to get all club names
+export function getAllClubNames(): string[] {
+  return Object.values(CLUB_NAMES)
+}
+
 export interface Participant {
   id: string
   name: string
@@ -43,19 +62,22 @@ interface ClubState {
 
 // Transform timetables data to club structure
 const transformTimetablesToClubs = (): Club[] => {
-  const teamsArray = Object.values(timetablesData)
+  const teamsArray: Team[] = Object.values(timetablesData).map((team) => ({
+    ...team,
+    groupName: team.clubName // Map clubName to groupName for Team interface compatibility
+  }))
 
   return [
     {
-      name: '개발 동아리',
+      name: getClubName('dev'),
       teams: teamsArray
     },
     {
-      name: '디자인 동아리',
+      name: getClubName('design'),
       teams: []
     },
     {
-      name: '기획 동아리',
+      name: getClubName('plan'),
       teams: []
     }
   ]
@@ -63,10 +85,13 @@ const transformTimetablesToClubs = (): Club[] => {
 
 export const useClubStore = create<ClubState>()((set, get) => ({
   clubs: transformTimetablesToClubs(),
-  openClubs: ['개발 동아리', '디자인 동아리', '기획 동아리'],
+  openClubs: getAllClubNames(),
   selectedTeam: {
-    club: '개발 동아리',
-    team: Object.values(timetablesData)[0]
+    club: getClubName('dev'),
+    team: {
+      ...Object.values(timetablesData)[0],
+      groupName: Object.values(timetablesData)[0].clubName
+    }
   },
   selectedParticipants: {},
   toggleClub: (clubName: string) => set((state) => ({
