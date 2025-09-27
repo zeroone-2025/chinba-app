@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import timetablesData from './timetables.json'
 import type { PersonalSchedule } from '@/types'
 
@@ -63,6 +64,7 @@ interface ClubState {
   addPersonalSchedule: (memberId: string, schedule: Omit<PersonalSchedule, 'id' | 'memberId'>) => void
   removePersonalSchedule: (memberId: string, scheduleId: string) => void
   getPersonalSchedules: (memberId: string) => PersonalSchedule[]
+  addParticipantsToCurrentTeam: (participants: Participant[]) => void
 }
 
 // Transform timetables data to club structure
@@ -88,7 +90,9 @@ const transformTimetablesToClubs = (): Club[] => {
   ]
 }
 
-export const useClubStore = create<ClubState>()((set, get) => ({
+export const useClubStore = create<ClubState>()(
+  persist(
+    (set, get) => ({
   clubs: transformTimetablesToClubs(),
   openClubs: getAllClubNames(),
   selectedTeam: {
@@ -141,5 +145,78 @@ export const useClubStore = create<ClubState>()((set, get) => ({
   getPersonalSchedules: (memberId: string) => {
     const state = get();
     return state.personalSchedulesByMember[memberId] || [];
-  }
-}))
+  },
+  // 현재 선택된 팀에 새로운 참가자들 추가
+  addParticipantsToCurrentTeam: (participants: Participant[]) => set((state) => {
+    console.log('=== addParticipantsToCurrentTeam 시작 ===');
+    console.log('현재 선택된 팀:', state.selectedTeam?.team.teamName);
+    console.log('현재 팀 참가자 수:', state.selectedTeam?.team.participants.length);
+    console.log('추가할 참가자들:', participants.map(p => ({ id: p.id, name: p.name })));
+
+    if (!state.selectedTeam) {
+      console.error('선택된 팀이 없음');
+      return state;
+    }
+
+    const updatedClubs = state.clubs.map(club => {
+      if (club.name !== state.selectedTeam!.club) return club;
+
+      const updatedTeams = club.teams.map(team => {
+        if (team.teamId !== state.selectedTeam!.team.teamId) return team;
+
+        console.log('기존 팀 참가자 수:', team.participants.length);
+        console.log('기존 팀 크기:', team.teamSize);
+
+        // 기존 참가자 ID들을 확인하여 중복 방지
+        const existingIds = team.participants.map(p => p.id);
+        const newParticipants = participants.filter(p => !existingIds.includes(p.id));
+
+        console.log('중복 제거 후 새 참가자 수:', newParticipants.length);
+
+        const updatedTeam = {
+          ...team,
+          participants: [...team.participants, ...newParticipants],
+          teamSize: team.participants.length + newParticipants.length
+        };
+
+        console.log('업데이트된 팀 참가자 수:', updatedTeam.participants.length);
+        console.log('업데이트된 팀 크기:', updatedTeam.teamSize);
+
+        return updatedTeam;
+      });
+
+      return { ...club, teams: updatedTeams };
+    });
+
+    // selectedTeam도 업데이트
+    const updatedSelectedTeam = updatedClubs
+      .find(club => club.name === state.selectedTeam!.club)
+      ?.teams.find(team => team.teamId === state.selectedTeam!.team.teamId);
+
+    console.log('업데이트된 선택 팀:', updatedSelectedTeam);
+
+    const newState = {
+      ...state,
+      clubs: updatedClubs,
+      selectedTeam: updatedSelectedTeam ? {
+        club: state.selectedTeam.club,
+        team: updatedSelectedTeam
+      } : state.selectedTeam
+    };
+
+    console.log('=== addParticipantsToCurrentTeam 완료 ===');
+    console.log('업데이트된 팀 참가자 수:', newState.selectedTeam?.team.participants.length);
+    console.log('새로운 참가자들:', newState.selectedTeam?.team.participants.map(p => p.name));
+    return newState;
+  })
+}),
+{
+  name: 'club-store',
+  partialize: (state) => ({
+    clubs: state.clubs,
+    selectedTeam: state.selectedTeam,
+    selectedParticipants: state.selectedParticipants,
+    personalSchedulesByMember: state.personalSchedulesByMember
+  })
+}
+))

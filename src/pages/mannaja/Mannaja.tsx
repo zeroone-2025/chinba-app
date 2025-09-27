@@ -3,6 +3,8 @@ import { Upload } from "lucide-react";
 import { useClubStore } from "@/stores/clubStore";
 import PartnerSection from "@/components/mannaja/PartnerSection";
 import RecommendSection from "@/components/mannaja/RecommendSection";
+import TimetableUploadModal from "@/components/mannaja/TimetableUploadModal";
+import type { ExtractedTimetableData } from "@/lib/geminiAPI";
 
 interface FreeTimeBlock {
   day: string;
@@ -12,15 +14,41 @@ interface FreeTimeBlock {
 
 const Mannaja = () => {
   const selectedTeam = useClubStore((state) => state.selectedTeam);
+  const addParticipantsToCurrentTeam = useClubStore((state) => state.addParticipantsToCurrentTeam);
   const [selectedFreeTime, setSelectedFreeTime] = useState<FreeTimeBlock | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const ctx = {
     clubType: selectedTeam?.club || "",
     team: selectedTeam?.team?.teamName || ""
   };
 
-  const handleFileUpload = () => {
-    // 파일 선택되어도 아무 기능 없음
+  const handleUploadClick = () => {
+    setIsUploadModalOpen(true);
+  };
+
+
+  const handleDataExtracted = (data: ExtractedTimetableData) => {
+    console.log('받은 추출 데이터:', data);
+
+    if (!selectedTeam) {
+      alert('팀을 선택해주세요.');
+      return;
+    }
+
+    try {
+      console.log('현재 선택된 팀:', selectedTeam);
+      console.log('추가할 참가자들:', data.participants);
+
+      // 추출된 참가자들을 현재 팀에 추가
+      addParticipantsToCurrentTeam(data.participants);
+
+      console.log('참가자 추가 완료');
+      alert(`${data.participants.length}명의 참가자가 "${selectedTeam.team.teamName}" 팀에 추가되었습니다!`);
+    } catch (error) {
+      console.error('참가자 추가 실패:', error);
+      alert(`참가자 추가에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+    }
   };
 
   return (
@@ -33,21 +61,13 @@ const Mannaja = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <input
-            type="file"
-            id="timetable-upload"
-            accept="image/*"
-            multiple
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-          <label
-            htmlFor="timetable-upload"
-            className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors cursor-pointer text-sm"
+          <button
+            onClick={handleUploadClick}
+            className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm"
           >
             <Upload className="w-4 h-4" />
             시간표 업로드
-          </label>
+          </button>
         </div>
       </div>
 
@@ -57,6 +77,13 @@ const Mannaja = () => {
         <PartnerSection ctx={ctx} onFreeTimeSelect={setSelectedFreeTime} />
         <RecommendSection ctx={ctx} selectedFreeTime={selectedFreeTime} />
       </main>
+
+      {/* 시간표 업로드 모달 */}
+      <TimetableUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onDataExtracted={handleDataExtracted}
+      />
     </div>
   );
 };
