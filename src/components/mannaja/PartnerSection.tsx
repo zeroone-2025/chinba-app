@@ -1,7 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
-import { Users } from "lucide-react";
+import { Users, Plus } from "lucide-react";
 import { useClubStore } from "@/stores/clubStore";
 import TimetableGrid, { DAYS, type TimeSlot } from "@/components/common/TimetableGrid";
+import { Button } from "@/components/ui/button";
+import AddPersonalModal from "./AddPersonalModal";
+import type { PersonalSchedule } from "@/types";
 
 interface FreeTimeBlock {
   day: string;
@@ -16,9 +19,13 @@ interface PartnerSectionProps {
 
 export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps) {
   const selectedTeam = useClubStore((state) => state.selectedTeam);
-  const { setSelectedParticipants: setStoreSelectedParticipants, getSelectedParticipants } = useClubStore();
+  const personalSchedulesByMember = useClubStore((state) => state.personalSchedulesByMember);
+  const { setSelectedParticipants: setStoreSelectedParticipants, getSelectedParticipants, addPersonalSchedule } = useClubStore();
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [selectedFreeTime, setSelectedFreeTime] = useState<FreeTimeBlock | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMemberId, setModalMemberId] = useState<string>("");
+  const [modalMemberName, setModalMemberName] = useState<string>("");
 
   // Initialize selected participants when team changes
   useEffect(() => {
@@ -67,7 +74,26 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
     }
   };
 
-  // 공강시간 계산을 위한 병합된 시간표 (TimetableGrid 내부에서 계산되므로 직접 계산)
+  // 개인 일정 추가 핸들러
+  const handleAddPersonalSchedule = (memberId: string, memberName: string) => {
+    setModalMemberId(memberId);
+    setModalMemberName(memberName);
+    setModalOpen(true);
+  };
+
+  const handlePersonalScheduleSubmit = (schedule: Omit<PersonalSchedule, 'id' | 'memberId'>) => {
+    addPersonalSchedule(modalMemberId, schedule);
+    setModalOpen(false);
+  };
+
+  // 선택된 참가자들의 개인일정 모음
+  const relevantPersonalSchedules = useMemo(() => {
+    return selectedParticipants.flatMap(participantId =>
+      personalSchedulesByMember[participantId] || []
+    );
+  }, [selectedParticipants, personalSchedulesByMember]);
+
+  // 공강시간 계산을 위한 병합된 시간표 (수업 + 개인일정 포함)
   const mergedTimetable = useMemo(() => {
     if (!participants) return new Map();
 
@@ -77,6 +103,7 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
       selectedParticipants.includes(p.id)
     );
 
+    // 1. 기존 수업 시간표 처리
     selectedParticipantData.forEach(participant => {
       participant.timetable.forEach(slot => {
         const [startTime, endTime] = slot.time.split('-');
@@ -102,8 +129,36 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
       });
     });
 
+    // 2. 개인일정 처리
+    relevantPersonalSchedules.forEach(schedule => {
+      const participant = selectedParticipantData.find(p => p.id === schedule.memberId);
+      if (!participant) return;
+
+      // 날짜를 요일로 변환
+      const dayIndex = new Date(schedule.date).getDay();
+      const dayName = ['일', '월', '화', '수', '목', '금', '토'][dayIndex];
+
+      // 시간 범위의 각 시간 슬롯을 처리
+      for (let hour = schedule.startHour; hour < schedule.endHour; hour++) {
+        const timeSlot = `${hour.toString().padStart(2, '0')}:00-${(hour + 1).toString().padStart(2, '0')}:00`;
+        const key = `${dayName}-${timeSlot}`;
+
+        if (!timeSlotMap.has(key)) {
+          timeSlotMap.set(key, {
+            day: dayName,
+            time: timeSlot,
+            count: 0,
+            participants: []
+          });
+        }
+        const existing = timeSlotMap.get(key)!;
+        existing.count++;
+        existing.participants.push(`${participant.name} (개인일정)`);
+      }
+    });
+
     return timeSlotMap;
-  }, [participants, selectedParticipants]);
+  }, [participants, selectedParticipants, relevantPersonalSchedules]);
 
   const getIntensityColor = (count: number) => {
     if (count === 0) return 'bg-transparent';
@@ -158,6 +213,18 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
                       ID: {participant.id} • {new Set(participant.timetable.map(t => t.subject)).size}개 과목
                     </div>
                   </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      handleAddPersonalSchedule(participant.id, participant.name);
+                    }}
+                    className="ml-2"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    개인 일정
+                  </Button>
                 </div>
               </div>
             ))}
@@ -273,6 +340,7 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
                   <span className="text-xs">{count}명</span>
                 </div>
               ))}
+              <span className="ml-2 inline-block rounded bg-green-100 px-2 py-0.5 text-[11px] text-green-700">공강</span>
             </div>
           </div>
 
@@ -280,14 +348,25 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
           <TimetableGrid
             participants={participants}
             selectedParticipantIds={selectedParticipants}
+            personalSchedules={relevantPersonalSchedules}
             getIntensityColor={getIntensityColor}
             highlightedFreeTime={selectedFreeTime}
+            showFree={true}
           />
           <div className="mt-2 text-xs text-muted-foreground">
             * 색상이 진할수록 더 많은 팀원이 동시에 수업이 있는 시간입니다.
           </div>
         </div>
       </div>
+
+      {/* 개인 일정 추가 모달 */}
+      <AddPersonalModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        memberId={modalMemberId}
+        memberName={modalMemberName}
+        onSubmit={handlePersonalScheduleSubmit}
+      />
     </section>
   );
 }

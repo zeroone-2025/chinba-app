@@ -8,9 +8,9 @@ const TabNavigation = () => {
   const location = useLocation();
 
   const tabs = [
-    { path: "/", label: "만나자", icon: MannajaIcon },
-    { path: "/mohat", label: "뭐했니", icon: MohatIcon },
-    { path: "/jababa", label: "잡아봐", icon: JababaIcon },
+    { path: "/", label: "만나자~", icon: MannajaIcon },
+    { path: "/mohat", label: "뭐했니?", icon: MohatIcon },
+    { path: "/jababa", label: "잡아봐!", icon: JababaIcon },
   ];
 
   return (

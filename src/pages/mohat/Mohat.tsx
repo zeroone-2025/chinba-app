@@ -75,7 +75,7 @@ const Mohat = () => {
 
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-semibold text-foreground">뭐했니</h1>
+          <h1 className="text-3xl font-semibold text-foreground"></h1>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-white rounded-full text-sm font-medium">
             <Trophy className="w-4 h-4" />
             <span>팀 점수: <strong>{teamScore}</strong></span>

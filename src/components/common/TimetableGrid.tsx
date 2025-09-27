@@ -1,4 +1,7 @@
 import { useMemo } from 'react';
+import { formatHourRange } from '@/lib/utils';
+import { ymdToWeekdayIndex } from '@/lib/time';
+import type { PersonalSchedule } from '@/types';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const TIME_SLOTS = [
@@ -28,11 +31,13 @@ interface Participant {
 interface TimetableGridProps {
   participants: Participant[];
   selectedParticipantIds: string[];
+  personalSchedules?: PersonalSchedule[]; // 개인일정 추가
   onSlotClick?: (day: string, timeSlot: string, count: number) => void;
   onSlotMouseDown?: (day: string, timeSlot: string) => void;
   onSlotMouseEnter?: (day: string, timeSlot: string) => void;
   onSlotMouseUp?: (day: string, timeSlot: string) => void;
   showFreeTimeText?: boolean;
+  showFree?: boolean; // 공강 시각적 표시 옵션 추가
   getIntensityColor?: (count: number, day?: string, timeSlot?: string) => string;
   highlightedFreeTime?: {
     day: string;
@@ -57,15 +62,17 @@ const defaultGetIntensityColor = (count: number) => {
 export default function TimetableGrid({
   participants,
   selectedParticipantIds,
+  personalSchedules = [], // 개인일정 기본값 추가
   onSlotClick,
   onSlotMouseDown,
   onSlotMouseEnter,
   onSlotMouseUp,
   showFreeTimeText = false,
+  showFree = false, // 공강 표시 기본값
   getIntensityColor = defaultGetIntensityColor,
   highlightedFreeTime
 }: TimetableGridProps) {
-  // 병합된 시간표 계산
+  // 병합된 시간표 계산 (수업 + 개인일정 포함)
   const mergedTimetable = useMemo(() => {
     const selectedParticipants = participants.filter(p =>
       selectedParticipantIds.includes(p.id)
@@ -73,6 +80,7 @@ export default function TimetableGrid({
 
     const timeSlotMap = new Map<string, TimeSlot>();
 
+    // 1. 기존 수업 시간표 처리
     selectedParticipants.forEach(participant => {
       participant.timetable.forEach(slot => {
         const [startTime, endTime] = slot.time.split('-');
@@ -98,8 +106,39 @@ export default function TimetableGrid({
       });
     });
 
+    // 2. 개인일정 처리 - 선택된 참가자들의 개인일정만 포함
+    personalSchedules.forEach(schedule => {
+      // 해당 개인일정의 소유자가 선택된 참가자인지 확인
+      if (!selectedParticipantIds.includes(schedule.memberId)) return;
+
+      const participant = selectedParticipants.find(p => p.id === schedule.memberId);
+      if (!participant) return;
+
+      // 날짜를 요일로 변환
+      const dayIndex = ymdToWeekdayIndex(schedule.date);
+      const dayName = ['일', '월', '화', '수', '목', '금', '토'][dayIndex];
+
+      // 시간 범위의 각 시간 슬롯을 처리
+      for (let hour = schedule.startHour; hour < schedule.endHour; hour++) {
+        const timeSlot = `${hour.toString().padStart(2, '0')}:00-${(hour + 1).toString().padStart(2, '0')}:00`;
+        const key = `${dayName}-${timeSlot}`;
+
+        if (!timeSlotMap.has(key)) {
+          timeSlotMap.set(key, {
+            day: dayName,
+            time: timeSlot,
+            count: 0,
+            participants: []
+          });
+        }
+        const existing = timeSlotMap.get(key)!;
+        existing.count++;
+        existing.participants.push(`${participant.name} (개인일정)`);
+      }
+    });
+
     return timeSlotMap;
-  }, [participants, selectedParticipantIds]);
+  }, [participants, selectedParticipantIds, personalSchedules]);
 
   return (
     <div className="rounded-lg border overflow-hidden">
@@ -114,7 +153,7 @@ export default function TimetableGrid({
       {TIME_SLOTS.map(timeSlot => (
         <div key={timeSlot} className="grid grid-cols-8 border-t">
           <div className="p-2 text-xs text-center border-r bg-muted/20">
-            {timeSlot}
+            {formatHourRange(timeSlot)}
           </div>
           {DAYS.map(day => {
             const slotKey = `${day}-${timeSlot}`;
@@ -137,7 +176,11 @@ export default function TimetableGrid({
                 onMouseDown={() => onSlotMouseDown?.(day, timeSlot)}
                 onMouseEnter={() => onSlotMouseEnter?.(day, timeSlot)}
                 onMouseUp={() => onSlotMouseUp?.(day, timeSlot)}
-                className={`p-2 text-xs border-r last:border-r-0 min-h-[40px] ${getIntensityColor(count, day, timeSlot)} ${
+                className={`p-2 text-xs border-r last:border-r-0 min-h-[40px] ${
+                  count === 0 && showFree
+                    ? 'bg-green-100' // 공강일 때 연녹색 배경
+                    : getIntensityColor(count, day, timeSlot)
+                } ${
                   onSlotClick || onSlotMouseDown ? 'cursor-pointer' : ''
                 } select-none ${
                   isHighlighted ? 'ring-4 ring-green-400 ring-opacity-70 z-10 relative' : ''
@@ -149,8 +192,8 @@ export default function TimetableGrid({
                     {count}
                   </div>
                 )}
-                {count === 0 && showFreeTimeText && (
-                  <div className="text-center text-green-700 text-xs">
+                {count === 0 && (showFreeTimeText || showFree) && (
+                  <div className="text-center text-green-700 text-xs font-medium whitespace-nowrap">
                     공강
                   </div>
                 )}

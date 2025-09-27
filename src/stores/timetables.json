@@ -2,7 +2,7 @@
   "T001": {
     "teamId": "T001",
     "teamName": "재산 1조팀",
-    "groupName": "NextOne",
+    "clubName": "NextOne",
     "teamSize": 4,
     "participants": [
       {
@@ -169,7 +169,7 @@
             "subject": "리눅스프로그래밍",
             "location": "전주:공과대학 7호관 204",
             "day": "수",
-            "time": "09:00-11:00"
+            "time": "09:00-10:00"
           },
           {
             "subject": "웹프로그래밍기초",
@@ -265,7 +265,7 @@
             "subject": "알고리즘",
             "location": "전주:공과대학 7호관 534",
             "day": "수",
-            "time": "12:00-14:00"
+            "time": "13:00-14:00"
           },
           {
             "subject": "컴퓨터구조",
@@ -283,7 +283,7 @@
             "subject": "수학2",
             "location": "전주:공과대학 3호관 311",
             "day": "화",
-            "time": "14:00-16:00"
+            "time": "15:00-16:00"
           },
           {
             "subject": "수학2",
@@ -307,7 +307,7 @@
             "subject": "통합전공탐색",
             "location": "전주:공과대학 8호관 212",
             "day": "수",
-            "time": "17:00-19:00"
+            "time": "18:00-19:00"
           }
         ]
       }
@@ -316,7 +316,7 @@
   "T002": {
     "teamId": "T002",
     "teamName": "불사조팀",
-    "groupName": "NextOne",
+    "clubName": "NextOne",
     "teamSize": 4,
     "participants": [
       {
@@ -696,7 +696,7 @@
   "T003": {
     "teamId": "T003",
     "teamName": "홍길동팀",
-    "groupName": "NextOne",
+    "clubName": "NextOne",
     "teamSize": 3,
     "participants": [
       {

@@ -1,5 +1,25 @@
 import { create } from 'zustand'
 import timetablesData from './timetables.json'
+import type { PersonalSchedule } from '@/types'
+
+// Centralized club names mapping
+export const CLUB_NAMES = {
+  dev: 'NextOne',
+  design: 'ZeroOne',
+  plan: 'Prior'
+} as const
+
+export type ClubKey = keyof typeof CLUB_NAMES
+
+// Helper function to get club name
+export function getClubName(key: ClubKey): string {
+  return CLUB_NAMES[key]
+}
+
+// Helper function to get all club names
+export function getAllClubNames(): string[] {
+  return Object.values(CLUB_NAMES)
+}
 
 export interface Participant {
   id: string
@@ -35,27 +55,34 @@ interface ClubState {
   openClubs: string[]
   selectedTeam: SelectedTeam | null
   selectedParticipants: Record<string, string[]> // teamId -> participantIds
+  personalSchedulesByMember: Record<string, PersonalSchedule[]> // memberId -> PersonalSchedule[]
   toggleClub: (clubName: string) => void
   selectTeam: (club: string, team: Team) => void
   setSelectedParticipants: (teamId: string, participantIds: string[]) => void
   getSelectedParticipants: (teamId: string) => string[]
+  addPersonalSchedule: (memberId: string, schedule: Omit<PersonalSchedule, 'id' | 'memberId'>) => void
+  removePersonalSchedule: (memberId: string, scheduleId: string) => void
+  getPersonalSchedules: (memberId: string) => PersonalSchedule[]
 }
 
 // Transform timetables data to club structure
 const transformTimetablesToClubs = (): Club[] => {
-  const teamsArray = Object.values(timetablesData)
+  const teamsArray: Team[] = Object.values(timetablesData).map((team) => ({
+    ...team,
+    groupName: team.clubName // Map clubName to groupName for Team interface compatibility
+  }))
 
   return [
     {
-      name: '개발 동아리',
+      name: getClubName('dev'),
       teams: teamsArray
     },
     {
-      name: '디자인 동아리',
+      name: getClubName('design'),
       teams: []
     },
     {
-      name: '기획 동아리',
+      name: getClubName('plan'),
       teams: []
     }
   ]
@@ -63,12 +90,16 @@ const transformTimetablesToClubs = (): Club[] => {
 
 export const useClubStore = create<ClubState>()((set, get) => ({
   clubs: transformTimetablesToClubs(),
-  openClubs: ['개발 동아리', '디자인 동아리', '기획 동아리'],
+  openClubs: getAllClubNames(),
   selectedTeam: {
-    club: '개발 동아리',
-    team: Object.values(timetablesData)[0]
+    club: getClubName('dev'),
+    team: {
+      ...Object.values(timetablesData)[0],
+      groupName: Object.values(timetablesData)[0].clubName
+    }
   },
   selectedParticipants: {},
+  personalSchedulesByMember: {}, // 개인일정 상태 초기화
   toggleClub: (clubName: string) => set((state) => ({
     openClubs: state.openClubs.includes(clubName)
       ? state.openClubs.filter((name) => name !== clubName)
@@ -86,5 +117,29 @@ export const useClubStore = create<ClubState>()((set, get) => ({
   getSelectedParticipants: (teamId: string) => {
     const state = get();
     return state.selectedParticipants[teamId] || [];
+  },
+  // 개인일정 관리 액션들
+  addPersonalSchedule: (memberId: string, schedule: Omit<PersonalSchedule, 'id' | 'memberId'>) => set((state) => {
+    const newSchedule: PersonalSchedule = {
+      ...schedule,
+      id: crypto.randomUUID(),
+      memberId
+    };
+    return {
+      personalSchedulesByMember: {
+        ...state.personalSchedulesByMember,
+        [memberId]: [...(state.personalSchedulesByMember[memberId] || []), newSchedule]
+      }
+    };
+  }),
+  removePersonalSchedule: (memberId: string, scheduleId: string) => set((state) => ({
+    personalSchedulesByMember: {
+      ...state.personalSchedulesByMember,
+      [memberId]: (state.personalSchedulesByMember[memberId] || []).filter(s => s.id !== scheduleId)
+    }
+  })),
+  getPersonalSchedules: (memberId: string) => {
+    const state = get();
+    return state.personalSchedulesByMember[memberId] || [];
   }
 }))
