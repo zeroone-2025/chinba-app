@@ -1,6 +1,6 @@
 import type { Activity } from '@/types';
 
-// 이모지 매핑 테이블
+// 이모지 매핑 테이블 - 실제 활동 이름과 정확히 매칭
 const EMOJI_BY_NAME: Record<string, string> = {
   "스터디 그룹": "📚",
   "도서관 가기": "📖",
@@ -9,7 +9,7 @@ const EMOJI_BY_NAME: Record<string, string> = {
   "농구": "🏀",
   "조깅": "🏃",
   "함께 점심": "🍽️",
-  "함께 저녁": "🍽️",
+  "함께 저녁": "🌙",
   "카페 타임": "☕",
   "영화 감상": "🎬",
   "보드게임": "🎲",
@@ -18,7 +18,7 @@ const EMOJI_BY_NAME: Record<string, string> = {
   "프로젝트 회의": "📋",
   "낮잠": "😴",
   "명상": "🧘",
-  "캠퍼스 산책": "🌿",
+  "캠퍼스 산책": "🚶",
   "꽃사진 찍기": "🌸",
   "동방에서 단체사진": "📷",
   "신정문에서 단체사진": "📸",
@@ -29,25 +29,25 @@ const EMOJI_BY_NAME: Record<string, string> = {
   "에타 친구 맺기": "🤝",
   "동방에 방명록 남기기": "📝",
   "MBTI/심리테스트 같이 해보기": "🧠",
-  "카페 가기": "☕",
+  "카페 가기": "🧋",
   "노래방 가기": "🎤",
   "선배들의 맛집 가기": "🍴",
-  "인생네컷 찍고 동방에 붙이기": "📸",
+  "인생네컷 찍고 동방에 붙이기": "📄",
   "릴스 찍고 업로드": "🎥",
   "서로 초상화 그려주기": "🎨",
-  "동방에 있는 보드게임 하기": "🎲",
+  "동방에 있는 보드게임 하기": "🃏",
   "함께 학식 먹기": "🍚",
   "취미활동하기": "🎯",
   "대운동장에 누워서 같이 사진 찍기": "🌾",
   "드레스코드 맞춰서 인증샷": "👔",
   "다같이 낮잠자기": "💤",
-  "보드게임방 가기": "🎲",
+  "보드게임방 가기": "🎮",
   "다른 조와 함께 놀기": "🎉",
   "PC방 가기": "🖥️",
   "볼링 치기": "🎳",
-  "영화 보기 (장편)": "🎬",
+  "영화 보기 (장편)": "🍿",
   "술 마시기": "🍻",
-  "원데이 클래스": "📚",
+  "원데이 클래스": "🎓",
   "브이로그 제작": "📹"
 };
 
@@ -61,6 +61,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 2,
     maxParticipants: 8,
     description: '함께 공부하며 지식을 나누는 시간',
+    emoji : "📚",
     timePreferences: [
       { startHour: 9, endHour: 12, weight: 0.9 },
       { startHour: 14, endHour: 18, weight: 0.8 }
@@ -73,6 +74,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     duration: 60,
     minParticipants: 1,
     description: '조용한 환경에서 개인 학습',
+    emoji : "📖",
     timePreferences: [
       { startHour: 9, endHour: 18, weight: 0.8 }
     ]
@@ -86,6 +88,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     maxParticipants: 4,
     location: '컴퓨터실',
     description: '프로그래밍 실력 향상을 위한 연습',
+    emoji : "💻",
     timePreferences: [
       { startHour: 10, endHour: 18, weight: 0.9 }
     ]
@@ -101,6 +104,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     maxParticipants: 6,
     location: '체육관',
     description: '체력 증진을 위한 운동',
+    emoji : "💪",
     timePreferences: [
       { startHour: 9, endHour: 11, weight: 0.8 },
       { startHour: 17, endHour: 20, weight: 0.9 }
@@ -115,6 +119,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     maxParticipants: 10,
     location: '농구장',
     description: '팀워크를 기르는 농구 경기',
+    emoji : "🏀",
     timePreferences: [
       { startHour: 15, endHour: 19, weight: 0.9 }
     ]
@@ -127,7 +132,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 1,
     maxParticipants: 8,
     description: '캠퍼스 둘레길 조깅',
-    emoji: '🏃',
+    emoji : "🏃",
     timePreferences: [
       { startHour: 7, endHour: 9, weight: 0.9 },
       { startHour: 18, endHour: 20, weight: 0.8 }
@@ -144,6 +149,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     maxParticipants: 12,
     location: '학식당',
     description: '친구들과 함께하는 점심 시간',
+    emoji : "🍽️",
     timePreferences: [
       { startHour: 11, endHour: 14, weight: 1.0 }
     ]
@@ -157,6 +163,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     maxParticipants: 12,
     location: '학식당',
     description: '친구들과 함께하는 저녁 시간',
+    emoji : "🌙",
     timePreferences: [
       { startHour: 17, endHour: 19, weight: 1.0 }
     ]
@@ -170,6 +177,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     maxParticipants: 8,
     location: '카페',
     description: '커피와 함께하는 휴식 시간',
+    emoji : "☕",
     timePreferences: [
       { startHour: 10, endHour: 12, weight: 0.7 },
       { startHour: 14, endHour: 17, weight: 0.8 }
@@ -186,6 +194,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     maxParticipants: 20,
     location: '영화관',
     description: '최신 영화 감상',
+    emoji : "🎬",
     timePreferences: [
       { startHour: 14, endHour: 22, weight: 0.8 }
     ]
@@ -198,6 +207,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 3,
     maxParticipants: 8,
     description: '다양한 보드게임으로 즐거운 시간',
+    emoji : "🎲",
     timePreferences: [
       { startHour: 15, endHour: 21, weight: 0.8 }
     ]
@@ -210,6 +220,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 1,
     maxParticipants: 10,
     description: '좋아하는 음악을 함께 듣는 시간',
+    emoji : "🎵",
     timePreferences: [
       { startHour: 14, endHour: 20, weight: 0.7 }
     ]
@@ -224,6 +235,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 5,
     maxParticipants: 30,
     description: '동아리 정기 모임',
+    emoji : "👥",
     timePreferences: [
       { startHour: 16, endHour: 20, weight: 0.9 }
     ]
@@ -236,6 +248,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 3,
     maxParticipants: 10,
     description: '팀 프로젝트 진행 회의',
+    emoji : "📋",
     timePreferences: [
       { startHour: 10, endHour: 18, weight: 0.8 }
     ]
@@ -251,7 +264,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     maxParticipants: 1,
     location: '휴게실',
     description: '짧은 휴식으로 에너지 충전',
-    emoji: '😴',
+    emoji : "😴",
     timePreferences: [
       { startHour: 13, endHour: 15, weight: 0.9 }
     ]
@@ -264,7 +277,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 1,
     maxParticipants: 10,
     description: '마음을 정리하는 명상 시간',
-    emoji: '🧘',
+    emoji : "🧘",
     timePreferences: [
       { startHour: 8, endHour: 10, weight: 0.8 },
       { startHour: 17, endHour: 19, weight: 0.7 }
@@ -278,7 +291,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 1,
     maxParticipants: 5,
     description: '캠퍼스를 걸으며 여유로운 시간',
-    emoji: '🌿',
+    emoji : "🚶",
     timePreferences: [
       { startHour: 14, endHour: 18, weight: 0.8 }
     ]
@@ -295,7 +308,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 2,
     location: '캠퍼스 내',
     description: '캠퍼스에서 예쁜 꽃과 함께 사진 찍기',
-    emoji: '🌸',
+    emoji : "🌸",
     timePreferences: [
       { startHour: 10, endHour: 16, weight: 0.9 }
     ]
@@ -308,7 +321,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 3,
     location: '동아리 동방',
     description: '동아리 동방에서 추억의 단체사진 촬영',
-    emoji: '📷',
+    emoji : "📷",
     timePreferences: [
       { startHour: 12, endHour: 18, weight: 0.8 }
     ]
@@ -321,7 +334,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 3,
     location: '신정문',
     description: '학교 대표 장소에서 기념사진 촬영',
-    emoji: '📷',
+    emoji : "📸",
     timePreferences: [
       { startHour: 10, endHour: 17, weight: 0.8 }
     ]
@@ -334,7 +347,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 2,
     location: '동아리 동방',
     description: '선배들과 함께하는 특별한 인증샷',
-    emoji: '⭐',
+    emoji : "⭐",
     timePreferences: [
       { startHour: 12, endHour: 18, weight: 0.7 }
     ]
@@ -346,6 +359,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     duration: 30,
     minParticipants: 2,
     description: '창의적인 브레인스토밍으로 조이름 만들기',
+    emoji : "💭",
     timePreferences: [
       { startHour: 10, endHour: 18, weight: 0.8 }
     ]
@@ -357,7 +371,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     duration: 15,
     minParticipants: 2,
     description: '서로 소통할 수 있는 연락처 교환',
-    emoji: '💬',
+    emoji : "💬",
     timePreferences: [
       { startHour: 9, endHour: 21, weight: 0.9 }
     ]
@@ -369,7 +383,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     duration: 20,
     minParticipants: 2,
     description: '함께한 순간을 SNS에 공유하기',
-    emoji: '🏷️',
+    emoji : "🏷️",
     timePreferences: [
       { startHour: 10, endHour: 20, weight: 0.8 }
     ]
@@ -381,6 +395,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     duration: 10,
     minParticipants: 2,
     description: '에브리타임에서 친구 추가하기',
+    emoji : "🤝",
     timePreferences: [
       { startHour: 9, endHour: 21, weight: 0.9 }
     ]
@@ -393,6 +408,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 2,
     location: '동아리 동방',
     description: '동방에 추억과 감사 인사 남기기',
+    emoji : "📝",
     timePreferences: [
       { startHour: 12, endHour: 18, weight: 0.8 }
     ]
@@ -404,6 +420,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     duration: 40,
     minParticipants: 3,
     description: '재미있는 심리테스트로 서로 알아가기',
+    emoji : "🧠",
     timePreferences: [
       { startHour: 13, endHour: 18, weight: 0.9 }
     ]
@@ -418,6 +435,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 2,
     location: '근처 카페',
     description: '따뜻한 음료와 함께하는 대화 시간',
+    emoji : "🧋",
     timePreferences: [
       { startHour: 10, endHour: 17, weight: 0.9 }
     ]
@@ -430,6 +448,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 3,
     location: '노래방',
     description: '신나는 노래로 스트레스 해소',
+    emoji : "🎤",
     timePreferences: [
       { startHour: 14, endHour: 20, weight: 0.9 }
     ]
@@ -442,6 +461,7 @@ export const DEFAULT_ACTIVITIES: Activity[] = [
     minParticipants: 3,
     location: '맛집',
     description: '선배 추천 맛집에서 함께 식사',
+    emoji : "🍴",
     timePreferences: [
       { startHour: 11, endHour: 14, weight: 1.0 },
       { startHour: 17, endHour: 19, weight: 1.0 }
