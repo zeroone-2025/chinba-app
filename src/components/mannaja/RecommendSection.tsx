@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { DEFAULT_ACTIVITIES, recommendByMinutes } from "@/stores";
+import { DEFAULT_ACTIVITIES, recommendByMinutes, getActivityScore } from "@/stores";
 
 export type Ctx = { clubType: string; team: string };
 
@@ -55,22 +55,33 @@ export default function RecommendSection({ selectedFreeTime }: RecommendSectionP
       <div className="space-y-4">
         <h3 className="text-xl font-medium">추천 활동 ({recommendedActivities.length}개)</h3>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {recommendedActivities.map((activity) => (
-            <div
-              key={activity.id}
-              className="p-4 border border-border rounded-lg hover:shadow-md transition-shadow"
-            >
-              <h4 className="font-medium text-lg mb-2">{activity.name}</h4>
-              <p className="text-sm text-muted-foreground mb-2">
-                소요시간: {activity.duration}분
-              </p>
-              {activity.description && (
-                <p className="text-sm text-muted-foreground">
-                  {activity.description}
+          {recommendedActivities.map((activity) => {
+            const score = getActivityScore(activity);
+            return (
+              <div
+                key={activity.id}
+                className="relative p-4 border border-border rounded-lg hover:shadow-md transition-shadow"
+              >
+                {score > 0 && (
+                  <span className="absolute top-12 right-3 whitespace-nowrap text-sm font-medium px-3 py-1 rounded-full border leading-none">
+                    {score}점
+                  </span>
+                )}  
+                <div className="flex items-center gap-2 mb-2">
+                  <span aria-hidden>{activity.emoji ?? '🔸'}</span>
+                  <h4 className="font-medium text-lg">{activity.name}</h4>
+                </div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  소요시간: {activity.duration}분
                 </p>
-              )}
-            </div>
-          ))}
+                {activity.description && (
+                  <p className="text-sm text-muted-foreground">
+                    {activity.description}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {recommendedActivities.length === 0 && (

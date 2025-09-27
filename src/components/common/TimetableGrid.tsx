@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { formatHourRange } from '@/lib/utils';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const TIME_SLOTS = [
@@ -114,7 +115,7 @@ export default function TimetableGrid({
       {TIME_SLOTS.map(timeSlot => (
         <div key={timeSlot} className="grid grid-cols-8 border-t">
           <div className="p-2 text-xs text-center border-r bg-muted/20">
-            {timeSlot}
+            {formatHourRange(timeSlot)}
           </div>
           {DAYS.map(day => {
             const slotKey = `${day}-${timeSlot}`;

@@ -13,4 +13,5 @@ export type Activity = {
   timePreferences?: TimePref[];
   score?: number;
   difficulty?: Difficulty;
+  emoji?: string;
 };
