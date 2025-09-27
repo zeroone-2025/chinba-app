@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { isValidTimeRange } from "@/lib/time";
+import { formatDateRange, getWeekStart, toDateString } from "@/lib/time";
 import type { PersonalSchedule } from "@/types";
+import SelectFromTimetableModal from "./SelectFromTimetableModal";
+import { X } from "lucide-react";
 
 interface AddPersonalModalProps {
   open: boolean;
@@ -16,6 +17,13 @@ interface AddPersonalModalProps {
   onSubmit: (schedule: Omit<PersonalSchedule, 'id' | 'memberId'>) => void;
 }
 
+interface TimeRange {
+  week: number;
+  weekdayIndex: number;
+  startHour: number;
+  endHour: number;
+}
+
 export default function AddPersonalModal({
   open,
   onClose,
@@ -23,41 +31,41 @@ export default function AddPersonalModal({
   onSubmit
 }: AddPersonalModalProps) {
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState("");
-  const [startHour, setStartHour] = useState<number>(9);
-  const [endHour, setEndHour] = useState<number>(10);
+  const [selectedRange, setSelectedRange] = useState<TimeRange | null>(null);
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showTimetableModal, setShowTimetableModal] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim() || !date) {
-      alert("일정 이름과 날짜를 입력해주세요.");
+    if (!title.trim()) {
+      alert("일정 이름을 입력해주세요.");
       return;
     }
 
-    if (!isValidTimeRange(startHour, endHour)) {
-      alert("올바른 시간 범위를 입력해주세요. (시작 시간 < 종료 시간)");
+    if (!selectedRange) {
+      alert("시간표에서 날짜와 시간을 선택해주세요.");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
+      const weekStart = getWeekStart(new Date(), selectedRange.week);
+      const date = toDateString(weekStart, selectedRange.weekdayIndex);
+
       onSubmit({
         title: title.trim(),
         date,
-        startHour,
-        endHour,
+        startHour: selectedRange.startHour,
+        endHour: selectedRange.endHour,
         ...(note.trim() && { note: note.trim() })
       });
 
       // 폼 초기화
       setTitle("");
-      setDate("");
-      setStartHour(9);
-      setEndHour(10);
+      setSelectedRange(null);
       setNote("");
       onClose();
     } catch (error) {
@@ -68,8 +76,24 @@ export default function AddPersonalModal({
     }
   };
 
-  // 시간 옵션 생성 (9-21시)
-  const timeOptions = Array.from({ length: 13 }, (_, i) => i + 9);
+  // 시간표에서 선택한 데이터를 폼에 반영
+  const handleTimetableConfirm = (range: TimeRange) => {
+    setSelectedRange(range);
+    setShowTimetableModal(false);
+  };
+
+  // 선택된 범위 클리어
+  const clearSelection = () => {
+    setSelectedRange(null);
+  };
+
+  // 선택된 범위의 포맷된 날짜 문자열 생성
+  const getFormattedSelection = () => {
+    if (!selectedRange) return null;
+    const weekStart = getWeekStart(new Date(), selectedRange.week);
+    const dateStr = toDateString(weekStart, selectedRange.weekdayIndex);
+    return formatDateRange(dateStr, selectedRange.startHour, selectedRange.endHour);
+  };
 
   return (
     <Dialog open={open} onOpenChange={() => !isSubmitting && onClose()}>
@@ -91,48 +115,34 @@ export default function AddPersonalModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="date">날짜 *</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDate(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start-hour">시작 시간 *</Label>
-              <Select value={startHour.toString()} onValueChange={(value: string) => setStartHour(Number(value))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeOptions.map((hour) => (
-                    <SelectItem key={hour} value={hour.toString()}>
-                      {hour}:00
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="end-hour">종료 시간 *</Label>
-              <Select value={endHour.toString()} onValueChange={(value: string) => setEndHour(Number(value))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeOptions.map((hour) => (
-                    <SelectItem key={hour} value={hour.toString()}>
-                      {hour}:00
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Label>날짜 및 시간 *</Label>
+            {selectedRange ? (
+              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <span className="flex-1 text-sm font-medium text-blue-800">
+                  {getFormattedSelection()}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSelection}
+                  disabled={isSubmitting}
+                  className="h-6 w-6 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowTimetableModal(true)}
+                disabled={isSubmitting}
+                className="w-full justify-center"
+              >
+                시간표에서 선택
+              </Button>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -161,6 +171,13 @@ export default function AddPersonalModal({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {/* 시간표 선택 모달 */}
+      <SelectFromTimetableModal
+        isOpen={showTimetableModal}
+        onClose={() => setShowTimetableModal(false)}
+        onConfirm={handleTimetableConfirm}
+      />
     </Dialog>
   );
 }

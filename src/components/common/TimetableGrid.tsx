@@ -17,6 +17,18 @@ interface TimeSlot {
   participants: string[];
 }
 
+// New types for drag functionality
+interface CellPos {
+  day: number;
+  slot: number;
+}
+
+interface Range {
+  day: number;
+  start: number;
+  end: number; // exclusive (end - 1 is the last included slot)
+}
+
 interface Participant {
   id: string;
   name: string;
@@ -44,6 +56,13 @@ interface TimetableGridProps {
     startHour: number;
     duration: number;
   } | null;
+  // New drag functionality props
+  dragEnabled?: boolean;
+  onDragStart?: (cell: CellPos) => void;
+  onDragMove?: (cell: CellPos) => void;
+  onDragEnd?: (range: Range) => void;
+  selectedRanges?: Range[];
+  dragPreview?: Range | null;
 }
 
 const defaultGetIntensityColor = (count: number) => {
@@ -70,7 +89,14 @@ export default function TimetableGrid({
   showFreeTimeText = false,
   showFree = false, // 공강 표시 기본값
   getIntensityColor = defaultGetIntensityColor,
-  highlightedFreeTime
+  highlightedFreeTime,
+  // New drag functionality props with defaults
+  dragEnabled = false,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
+  selectedRanges = [],
+  dragPreview = null
 }: TimetableGridProps) {
   // 병합된 시간표 계산 (수업 + 개인일정 포함)
   const mergedTimetable = useMemo(() => {
@@ -140,6 +166,55 @@ export default function TimetableGrid({
     return timeSlotMap;
   }, [participants, selectedParticipantIds, personalSchedules]);
 
+  // Helper functions for drag functionality
+  const getIndicesFromDaySlot = (day: string, timeSlot: string): CellPos => ({
+    day: DAYS.indexOf(day),
+    slot: TIME_SLOTS.indexOf(timeSlot)
+  });
+
+  const isInRange = (dayIndex: number, slotIndex: number, range: Range): boolean => {
+    return range.day === dayIndex && slotIndex >= range.start && slotIndex < range.end;
+  };
+
+  const isInDragPreview = (dayIndex: number, slotIndex: number): boolean => {
+    return dragPreview ? isInRange(dayIndex, slotIndex, dragPreview) : false;
+  };
+
+  const isInSelectedRanges = (dayIndex: number, slotIndex: number): boolean => {
+    return selectedRanges.some(range => isInRange(dayIndex, slotIndex, range));
+  };
+
+  // Enhanced event handlers for drag support
+  const handlePointerDown = (day: string, timeSlot: string, event: React.PointerEvent) => {
+    if (dragEnabled) {
+      event.preventDefault();
+      const cellPos = getIndicesFromDaySlot(day, timeSlot);
+      onDragStart?.(cellPos);
+    }
+    onSlotMouseDown?.(day, timeSlot);
+  };
+
+  const handlePointerMove = (day: string, timeSlot: string) => {
+    if (dragEnabled) {
+      const cellPos = getIndicesFromDaySlot(day, timeSlot);
+      onDragMove?.(cellPos);
+    }
+    onSlotMouseEnter?.(day, timeSlot);
+  };
+
+  const handlePointerUp = (day: string, timeSlot: string) => {
+    if (dragEnabled) {
+      const cellPos = getIndicesFromDaySlot(day, timeSlot);
+      const range: Range = {
+        day: cellPos.day,
+        start: cellPos.slot,
+        end: cellPos.slot + 1
+      };
+      onDragEnd?.(range);
+    }
+    onSlotMouseUp?.(day, timeSlot);
+  };
+
   return (
     <div className="rounded-lg border overflow-hidden">
       <div className="grid grid-cols-8 bg-muted/50">
@@ -155,10 +230,11 @@ export default function TimetableGrid({
           <div className="p-2 text-xs text-center border-r bg-muted/20">
             {formatHourRange(timeSlot)}
           </div>
-          {DAYS.map(day => {
+          {DAYS.map((day, dayIndex) => {
             const slotKey = `${day}-${timeSlot}`;
             const slot = mergedTimetable.get(slotKey);
             const count = slot?.count || 0;
+            const slotIndex = TIME_SLOTS.indexOf(timeSlot);
 
             // 강조 표시 여부 확인
             const isHighlighted = highlightedFreeTime &&
@@ -169,23 +245,54 @@ export default function TimetableGrid({
                 return slotHour >= highlightedFreeTime.startHour && slotHour < endHour;
               })();
 
+            // Drag state checks
+            const isInDragPreviewArea = isInDragPreview(dayIndex, slotIndex);
+            const isInSelectedArea = isInSelectedRanges(dayIndex, slotIndex);
+
+            // Dynamic class calculation
+            let cellClasses = 'p-2 text-xs border-r last:border-r-0 min-h-[40px] select-none relative';
+
+            // Base color (original logic)
+            if (count === 0 && showFree) {
+              cellClasses += ' bg-green-100';
+            } else {
+              cellClasses += ` ${getIntensityColor(count, day, timeSlot)}`;
+            }
+
+            // Drag preview overlay (highest priority when dragging)
+            if (isInDragPreviewArea && count === 0) {
+              cellClasses += ' tt-drag-preview';
+            }
+            // Selected range overlay (when not in preview)
+            else if (isInSelectedArea && count === 0) {
+              cellClasses += ' tt-selected';
+            }
+
+            // Interactive states
+            if (dragEnabled || onSlotClick || onSlotMouseDown) {
+              cellClasses += ' cursor-pointer';
+            }
+
+            // Legacy highlight (lowest priority)
+            if (isHighlighted) {
+              cellClasses += ' ring-4 ring-green-400 ring-opacity-70 z-10';
+            }
+
             return (
               <div
                 key={`${day}-${timeSlot}`}
                 onClick={() => onSlotClick?.(day, timeSlot, count)}
+                onPointerDown={(e) => handlePointerDown(day, timeSlot, e)}
+                onPointerMove={() => handlePointerMove(day, timeSlot)}
+                onPointerUp={() => handlePointerUp(day, timeSlot)}
                 onMouseDown={() => onSlotMouseDown?.(day, timeSlot)}
                 onMouseEnter={() => onSlotMouseEnter?.(day, timeSlot)}
                 onMouseUp={() => onSlotMouseUp?.(day, timeSlot)}
-                className={`p-2 text-xs border-r last:border-r-0 min-h-[40px] ${
-                  count === 0 && showFree
-                    ? 'bg-green-100' // 공강일 때 연녹색 배경
-                    : getIntensityColor(count, day, timeSlot)
-                } ${
-                  onSlotClick || onSlotMouseDown ? 'cursor-pointer' : ''
-                } select-none ${
-                  isHighlighted ? 'ring-4 ring-green-400 ring-opacity-70 z-10 relative' : ''
-                }`}
+                className={cellClasses}
                 title={slot ? `${count}명: ${slot.participants.join(', ')}` : ''}
+                style={{
+                  touchAction: dragEnabled ? 'none' : 'auto' // Prevent scrolling during drag on mobile
+                }}
               >
                 {count > 0 && (
                   <div className="text-center font-medium">
@@ -206,4 +313,4 @@ export default function TimetableGrid({
   );
 }
 
-export { DAYS, TIME_SLOTS, type TimeSlot, type Participant };
+export { DAYS, TIME_SLOTS, type TimeSlot, type Participant, type CellPos, type Range };

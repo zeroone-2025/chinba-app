@@ -77,3 +77,31 @@
     font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   }
 }
+
+@layer components {
+  /* Timetable drag visualization styles */
+  .tt-drag-preview {
+    background: hsl(var(--primary) / 0.25) !important;
+    outline: 1px dashed hsl(var(--primary)) !important;
+    outline-offset: -1px;
+  }
+
+  .tt-selected {
+    background: hsl(var(--primary) / 0.35) !important;
+    outline: 2px solid hsl(var(--primary)) !important;
+    outline-offset: -2px;
+  }
+
+  /* Ensure proper stacking for drag overlays */
+  .tt-drag-preview,
+  .tt-selected {
+    position: relative;
+    z-index: 10;
+  }
+
+  /* Optional: Add subtle animation for state transitions */
+  .tt-drag-preview,
+  .tt-selected {
+    transition: background-color 0.1s ease, outline 0.1s ease;
+  }
+}

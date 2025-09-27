@@ -7,7 +7,7 @@
     "participants": [
       {
         "id": "S001",
-        "name": "참가자1",
+        "name": "김하준",
         "timetable": [
           {
             "subject": "리눅스프로그래밍",
@@ -79,7 +79,7 @@
       },
       {
         "id": "S002",
-        "name": "참가자2",
+        "name": "박도윤",
         "timetable": [
           {
             "subject": "품질경영",
@@ -157,7 +157,7 @@
       },
       {
         "id": "S003",
-        "name": "참가자3",
+        "name": "최민지",
         "timetable": [
           {
             "subject": "리눅스프로그래밍",
@@ -223,7 +223,7 @@
       },
       {
         "id": "S004",
-        "name": "참가자4",
+        "name": "정우석",
         "timetable": [
           {
             "subject": "일반물리학실험2",
@@ -321,7 +321,7 @@
     "participants": [
       {
         "id": "S005",
-        "name": "참가자5",
+        "name": "한지민",
         "timetable": [
           {
             "subject": "리눅스프로그래밍",
@@ -411,7 +411,7 @@
       },
       {
         "id": "S006",
-        "name": "참가자6",
+        "name": "오세준",
         "timetable": [
           {
             "subject": "한국사의이해",
@@ -489,7 +489,7 @@
       },
       {
         "id": "S007",
-        "name": "참가자7",
+        "name": "장유리",
         "timetable": [
           {
             "subject": "일반물리학실험2",
@@ -615,7 +615,7 @@
       },
       {
         "id": "S008",
-        "name": "참가자8",
+        "name": "신도영",
         "timetable": [
           {
             "subject": "고전명저이해",
