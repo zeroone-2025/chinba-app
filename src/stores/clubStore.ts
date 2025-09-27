@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import timetablesData from './timetables.json'
+import type { PersonalSchedule } from '@/types'
 
 // Centralized club names mapping
 export const CLUB_NAMES = {
@@ -54,10 +55,14 @@ interface ClubState {
   openClubs: string[]
   selectedTeam: SelectedTeam | null
   selectedParticipants: Record<string, string[]> // teamId -> participantIds
+  personalSchedulesByMember: Record<string, PersonalSchedule[]> // memberId -> PersonalSchedule[]
   toggleClub: (clubName: string) => void
   selectTeam: (club: string, team: Team) => void
   setSelectedParticipants: (teamId: string, participantIds: string[]) => void
   getSelectedParticipants: (teamId: string) => string[]
+  addPersonalSchedule: (memberId: string, schedule: Omit<PersonalSchedule, 'id' | 'memberId'>) => void
+  removePersonalSchedule: (memberId: string, scheduleId: string) => void
+  getPersonalSchedules: (memberId: string) => PersonalSchedule[]
 }
 
 // Transform timetables data to club structure
@@ -94,6 +99,7 @@ export const useClubStore = create<ClubState>()((set, get) => ({
     }
   },
   selectedParticipants: {},
+  personalSchedulesByMember: {}, // 개인일정 상태 초기화
   toggleClub: (clubName: string) => set((state) => ({
     openClubs: state.openClubs.includes(clubName)
       ? state.openClubs.filter((name) => name !== clubName)
@@ -111,5 +117,29 @@ export const useClubStore = create<ClubState>()((set, get) => ({
   getSelectedParticipants: (teamId: string) => {
     const state = get();
     return state.selectedParticipants[teamId] || [];
+  },
+  // 개인일정 관리 액션들
+  addPersonalSchedule: (memberId: string, schedule: Omit<PersonalSchedule, 'id' | 'memberId'>) => set((state) => {
+    const newSchedule: PersonalSchedule = {
+      ...schedule,
+      id: crypto.randomUUID(),
+      memberId
+    };
+    return {
+      personalSchedulesByMember: {
+        ...state.personalSchedulesByMember,
+        [memberId]: [...(state.personalSchedulesByMember[memberId] || []), newSchedule]
+      }
+    };
+  }),
+  removePersonalSchedule: (memberId: string, scheduleId: string) => set((state) => ({
+    personalSchedulesByMember: {
+      ...state.personalSchedulesByMember,
+      [memberId]: (state.personalSchedulesByMember[memberId] || []).filter(s => s.id !== scheduleId)
+    }
+  })),
+  getPersonalSchedules: (memberId: string) => {
+    const state = get();
+    return state.personalSchedulesByMember[memberId] || [];
   }
 }))
