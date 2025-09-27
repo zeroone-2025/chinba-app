@@ -640,3 +640,26 @@ export const SCORED_ACTIVITIES: Activity[] =
     const score = difficultyScore(a);
     return { ...a, score, difficulty: toDifficulty(score) };
   });
+
+// Helper function to get activity score from various sources
+export function getActivityScore(activity: { id?: string; name?: string; score?: number }): number {
+  // 1. Direct score property (from MohatActivity)
+  if (typeof activity?.score === 'number') {
+    return Math.round(activity.score);
+  }
+
+  // 2. Look up by ID in scored activities
+  if (activity?.id) {
+    const found = SCORED_ACTIVITIES.find(a => a.id === activity.id);
+    if (found?.score) return Math.round(found.score);
+  }
+
+  // 3. Look up by name in scored activities
+  if (activity?.name) {
+    const found = SCORED_ACTIVITIES.find(a => a.name === activity.name);
+    if (found?.score) return Math.round(found.score);
+  }
+
+  // 4. Default fallback
+  return 0;
+}

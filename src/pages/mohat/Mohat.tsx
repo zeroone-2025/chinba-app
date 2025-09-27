@@ -3,6 +3,7 @@ import { Plus, Users, Calendar, Edit, Trash2, Trophy } from 'lucide-react'
 import { useClubStore } from '@/stores/clubStore'
 import { useMohatStore, type MohatActivity } from '@/stores/mohatStore'
 import { useTeamStore, type Ctx } from '@/stores/teamStore'
+import { getActivityScore } from '@/stores/activities'
 import AddActivityModal from '@/components/mohat/AddActivityModal'
 import EditActivityModal from '@/components/mohat/EditActivityModal'
 
@@ -137,6 +138,10 @@ const Mohat = () => {
                 <div className="flex-1 min-w-0 pr-16">
                   <h3 className="font-semibold text-foreground mb-2">
                     {activity.title}
+                    {(() => {
+                      const score = getActivityScore({ id: activity.id, name: activity.title, score: activity.score });
+                      return score > 0 ? <span className="text-muted-foreground font-normal"> · {score}점</span> : null;
+                    })()}
                   </h3>
 
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">

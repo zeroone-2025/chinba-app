@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import timetablesData from './timetables.json'
 
 export type Ctx = { clubType: string; team: string }
 
@@ -48,11 +49,20 @@ const safeRatio = (x: number, denom: number) => {
   return clamp(x / denom, 0, 1)
 }
 
+// Get actual team size from timetables.json based on team name
+const getActualTeamSize = (teamName: string): number => {
+  const teamsArray = Object.values(timetablesData)
+  const team = teamsArray.find(t => t.teamName === teamName)
+  return team?.teamSize || 10 // fallback to 10 if not found
+}
+
 const ensureMeta = (state: State, c: Ctx): TeamMeta => {
   const k = keyOf(c)
   if (!state.meta[k]) {
+    // Use actual team size from timetables.json for participation rate calculation
+    const actualTeamSize = getActualTeamSize(c.team)
     state.meta[k] = {
-      members: 10,
+      members: actualTeamSize,
       activityCount: 0,
       totalMinutes: 0,
       partSum: 0,
@@ -84,7 +94,9 @@ export const useTeamStore = create<State & Actions>()(
         return { ...meta, avgParticipation }
       },
       setMembers: (c, n) => {
-        const clampedN = clamp(n, 4, 20)
+        // Use actual team size from timetables.json, but allow manual override
+        const actualTeamSize = getActualTeamSize(c.team)
+        const clampedN = n !== undefined ? clamp(n, 4, 20) : actualTeamSize
         set((state) => {
           const meta = ensureMeta(state, c)
           meta.members = clampedN

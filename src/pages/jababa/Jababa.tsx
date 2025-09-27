@@ -7,11 +7,22 @@ import { cn } from "@/lib/utils";
 const METRICS = ['점수','활동 횟수','총 참여시간','참여율'] as const;
 type Metric = typeof METRICS[number];
 
+interface TeamData {
+  team: string;
+  score: number;
+  activityCount: number;
+  totalMinutes: number;
+  participationRate: string;
+  avgParticipation: number;
+  rank: number;
+}
+
 const Jababa = () => {
+  const [metric, setMetric] = useState<Metric>('점수');
+  const selectedTeam = useClubStore((state) => state.selectedTeam);
+  const teamStore = useTeamStore();
+
   try {
-    const [metric, setMetric] = useState<Metric>('점수');
-    const selectedTeam = useClubStore((state) => state.selectedTeam);
-    const teamStore = useTeamStore();
 
     // Get current clubType from selectedTeam, fallback to "개발동아리"
     const clubType = selectedTeam?.club || "개발동아리";
@@ -20,7 +31,7 @@ const Jababa = () => {
     const allScores = teamStore.scores || {};
 
   // Filter teams for the current club and get metadata
-  const clubTeams = Object.entries(allScores)
+  const clubTeams: TeamData[] = Object.entries(allScores)
     .filter(([key]) => key.startsWith(clubType + '/'))
     .map(([key, score]) => {
       const team = key.replace(clubType + '/', '');
@@ -32,10 +43,12 @@ const Jababa = () => {
         score,
         activityCount: meta.activityCount,
         totalMinutes: meta.totalMinutes,
+        // Participation rate based on actual team size from timetables.json
         participationRate: (avgParticipation * 100).toFixed(1) + '%',
         avgParticipation // raw value for chart normalization
       };
     })
+    .filter(item => typeof item.team === 'string' && item.team.trim() !== '') // Filter out invalid team names
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     .map((x, i) => ({
       ...x,
@@ -55,9 +68,9 @@ const Jababa = () => {
     };
 
     // Prepare chart data for BarChart
-    const chartTeams = clubTeams.map(team => team.team);
+    const chartTeams = clubTeams.map(team => String(team.team));
     const data = chartTeams.map(team => ({
-      team: team,
+      team: String(team), // Ensure team is always a string
       value: valueOf(metric, team)
     }));
 
@@ -122,8 +135,8 @@ const Jababa = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-foreground">
-                      {row.team}
-                      {selectedTeam?.team?.teamName === row.team && (
+                      {String(row.team)}
+                      {selectedTeam?.team?.teamName === String(row.team) && (
                         <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary">
                           현재 팀
                         </span>
