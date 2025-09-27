@@ -12,7 +12,7 @@ interface RecommendSectionProps {
   } | null;
 }
 
-export default function RecommendSection({ ctx, selectedFreeTime }: RecommendSectionProps) {
+export default function RecommendSection({ selectedFreeTime }: RecommendSectionProps) {
   const [minutes, setMinutes] = useState<number>(30);
 
   // 선택된 공강시간이 있으면 해당 시간으로 설정, 없으면 기본값으로 리셋

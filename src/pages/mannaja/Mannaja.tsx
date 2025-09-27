@@ -19,7 +19,7 @@ const Mannaja = () => {
     team: selectedTeam?.team?.teamName || ""
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = () => {
     // 파일 선택되어도 아무 기능 없음
   };
 

@@ -61,7 +61,7 @@ const Jababa = () => {
       value: valueOf(metric, team)
     }));
 
-    const colorOf = (team: string, i: number) => ['#ef4444', '#3b82f6', '#22c55e', '#a855f7', '#f59e0b', '#06b6d4', '#e11d48'][i % 7];
+    const colorOf = (_team: string, i: number) => ['#ef4444', '#3b82f6', '#22c55e', '#a855f7', '#f59e0b', '#06b6d4', '#e11d48'][i % 7];
 
     return (
       <div>

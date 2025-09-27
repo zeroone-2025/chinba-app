@@ -378,8 +378,8 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
     setDragStart(null);
   };
 
-  const getIntensityColor = (count: number, day: string, timeSlot: string) => {
-    const isSelected = selectedFreeTimeSlots.some(slot => slot.day === day && slot.time === timeSlot);
+  const getIntensityColor = (count: number, day?: string, timeSlot?: string) => {
+    const isSelected = day && timeSlot ? selectedFreeTimeSlots.some(slot => slot.day === day && slot.time === timeSlot) : false;
 
     if (count === 0) {
       if (isSelected) {

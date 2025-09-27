@@ -1,6 +1,6 @@
 import { ChevronRight, Users } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useClubStore, type Team } from "@/stores/clubStore";
+import { useClubStore } from "@/stores/clubStore";
 
 const SidebarComponent = () => {
   const { clubs, openClubs, selectedTeam, toggleClub, selectTeam } =
