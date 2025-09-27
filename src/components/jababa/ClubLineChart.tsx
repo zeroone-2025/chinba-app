@@ -12,7 +12,7 @@ import {
 type Metric = '점수' | '활동 횟수' | '총 참여시간' | '참여율';
 
 interface ClubLineChartProps {
-  data: Array<Record<string, any>>
+  data: Array<Record<string, number | string>>
   teams: string[]
   metric: Metric
   maxVal: number
@@ -34,7 +34,7 @@ const colorOf = (i: number): string =>
 // Custom Tooltip Component
 const MetricTooltip = ({ active, payload, metric }: {
   active?: boolean;
-  payload?: any[];
+  payload?: { dataKey: string; value: number }[];
   label?: string;
   metric: Metric;
 }) => {
@@ -53,7 +53,7 @@ const MetricTooltip = ({ active, payload, metric }: {
 
   return (
     <div className="rounded-md border bg-white/90 p-2 text-sm shadow">
-      <div className="font-medium">{team}</div>
+      <div className="font-medium">{String(team)}</div>
       <div>{metric}: <b>{val}{unit}</b></div>
     </div>
   );
@@ -92,9 +92,9 @@ const ClubLineChart = ({ data, teams, metric, maxVal }: ClubLineChartProps) => {
 
         {teams.map((team, idx) => (
           <Line
-            key={team}
+            key={String(team)}
             type="monotone"
-            dataKey={team}
+            dataKey={String(team)}
             stroke={colorOf(idx)}
             strokeWidth={2}
             dot={{ r: 3 }}
