@@ -51,7 +51,7 @@ const Mannaja = () => {
         </div>
       </div>
 
-      <h1 className="text-3xl font-semibold text-foreground mb-6">만나자</h1>
+      <h1 className="text-3xl font-semibold text-foreground mb-6"></h1>
 
       <main className="space-y-6">
         <PartnerSection ctx={ctx} onFreeTimeSelect={setSelectedFreeTime} />
