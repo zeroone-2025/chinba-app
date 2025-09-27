@@ -19,33 +19,46 @@ interface PartnerSectionProps {
 
 export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps) {
   const selectedTeam = useClubStore((state) => state.selectedTeam);
+  const participants = useClubStore((state) => state.selectedTeam?.team.participants || []);
   const personalSchedulesByMember = useClubStore((state) => state.personalSchedulesByMember);
   const { setSelectedParticipants: setStoreSelectedParticipants, getSelectedParticipants, addPersonalSchedule } = useClubStore();
+
+  console.log('PartnerSection 렌더링:', {
+    selectedTeam: selectedTeam?.team.teamName,
+    participantsCount: participants.length,
+    participants: participants.map(p => p.name)
+  });
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [selectedFreeTime, setSelectedFreeTime] = useState<FreeTimeBlock | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMemberId, setModalMemberId] = useState<string>("");
   const [modalMemberName, setModalMemberName] = useState<string>("");
 
-  // Initialize selected participants when team changes
+  // Initialize selected participants when team changes or participants are added
   useEffect(() => {
-    if (selectedTeam?.team.participants) {
+    if (participants.length > 0 && selectedTeam) {
+      console.log('PartnerSection: 팀 변경 감지', selectedTeam.team.teamName, '참가자 수:', participants.length);
+
       const teamId = selectedTeam.team.teamId;
       const storedParticipants = getSelectedParticipants(teamId);
+      const currentParticipantIds = participants.map(p => p.id);
 
-      if (storedParticipants.length > 0) {
-        // 저장된 선택 상태가 있으면 복원
+      // 새로운 참가자가 추가되었는지 확인
+      const hasNewParticipants = currentParticipantIds.some(id => !storedParticipants.includes(id));
+
+      if (storedParticipants.length > 0 && !hasNewParticipants) {
+        // 저장된 선택 상태가 있고 새 참가자가 없으면 복원
         setSelectedParticipants(storedParticipants);
       } else {
-        // 없으면 모든 참가자 선택
-        const allParticipantIds = selectedTeam.team.participants.map(p => p.id);
-        setSelectedParticipants(allParticipantIds);
-        setStoreSelectedParticipants(teamId, allParticipantIds);
+        // 없으면 모든 참가자 선택 (새 참가자 포함)
+        console.log('모든 참가자 선택:', currentParticipantIds);
+        setSelectedParticipants(currentParticipantIds);
+        setStoreSelectedParticipants(teamId, currentParticipantIds);
       }
     }
-  }, [selectedTeam?.team.teamId, getSelectedParticipants, setStoreSelectedParticipants]);
+  }, [selectedTeam?.team.teamId, participants, getSelectedParticipants, setStoreSelectedParticipants]);
 
-  if (!selectedTeam || !selectedTeam.team.participants) {
+  if (!selectedTeam || participants.length === 0) {
     return (
       <section className="mb-6">
         <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
@@ -59,7 +72,7 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
     );
   }
 
-  const participants = selectedTeam.team.participants;
+  // participants는 이미 위에서 Zustand selector로 정의됨
 
   const handleParticipantToggle = (participantId: string) => {
     const newSelectedParticipants = selectedParticipants.includes(participantId)
