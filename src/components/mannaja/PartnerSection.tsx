@@ -34,88 +34,6 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
   const [modalMemberId, setModalMemberId] = useState<string>("");
   const [modalMemberName, setModalMemberName] = useState<string>("");
 
-  // Initialize selected participants when team changes or participants are added
-  useEffect(() => {
-    if (participants.length > 0 && selectedTeam) {
-      console.log('PartnerSection: 팀 변경 감지', selectedTeam.team.teamName, '참가자 수:', participants.length);
-
-      const teamId = selectedTeam.team.teamId;
-      const storedParticipants = getSelectedParticipants(teamId);
-      const currentParticipantIds = participants.map(p => p.id);
-
-      // 새로운 참가자가 추가되었는지 확인
-      const hasNewParticipants = currentParticipantIds.some(id => !storedParticipants.includes(id));
-
-      if (storedParticipants.length > 0 && !hasNewParticipants) {
-        // 저장된 선택 상태가 있고 새 참가자가 없으면 복원
-        setSelectedParticipants(storedParticipants);
-      } else {
-        // 없으면 모든 참가자 선택 (새 참가자 포함)
-        console.log('모든 참가자 선택:', currentParticipantIds);
-        setSelectedParticipants(currentParticipantIds);
-        setStoreSelectedParticipants(teamId, currentParticipantIds);
-      }
-    }
-  }, [selectedTeam?.team.teamId, participants, getSelectedParticipants, setStoreSelectedParticipants]);
-
-  if (!selectedTeam || participants.length === 0) {
-    return (
-      <section className="mb-6">
-        <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          팀을 선택해주세요
-        </h2>
-        <div className="rounded-xl border p-4 text-sm text-muted-foreground">
-          팀을 선택하면 팀원 정보와 시간표가 표시됩니다.
-        </div>
-      </section>
-    );
-  }
-
-  // participants는 이미 위에서 Zustand selector로 정의됨
-
-  const handleParticipantToggle = (participantId: string) => {
-    const newSelectedParticipants = selectedParticipants.includes(participantId)
-      ? selectedParticipants.filter(id => id !== participantId)
-      : [...selectedParticipants, participantId];
-
-    setSelectedParticipants(newSelectedParticipants);
-
-    // 스토어에 저장
-    if (selectedTeam?.team.teamId) {
-      setStoreSelectedParticipants(selectedTeam.team.teamId, newSelectedParticipants);
-    }
-  };
-
-  // 개인 일정 추가 핸들러
-  const handleAddPersonalSchedule = (memberId: string, memberName: string) => {
-    setModalMemberId(memberId);
-    setModalMemberName(memberName);
-    setModalOpen(true);
-  };
-
-  const handlePersonalScheduleSubmit = (schedule: Omit<PersonalSchedule, 'id' | 'memberId'>) => {
-    addPersonalSchedule(modalMemberId, schedule);
-    setModalOpen(false);
-  };
-
-  // 참가자 삭제 핸들러
-  const handleDeleteParticipant = (participantId: string, participantName: string) => {
-    const confirmDelete = window.confirm(
-      `"${participantName}" 참가자를 정말 삭제하시겠습니까?\n\n삭제하면 해당 참가자의 개인일정도 모두 삭제됩니다.`
-    );
-
-    if (confirmDelete) {
-      try {
-        removeParticipantFromCurrentTeam(participantId);
-        console.log(`참가자 ${participantName} (${participantId}) 삭제 완료`);
-      } catch (error) {
-        console.error('참가자 삭제 실패:', error);
-        alert('참가자 삭제에 실패했습니다.');
-      }
-    }
-  };
-
   // 선택된 참가자들의 개인일정 모음
   const relevantPersonalSchedules = useMemo(() => {
     return selectedParticipants.flatMap(participantId =>
@@ -189,6 +107,88 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
 
     return timeSlotMap;
   }, [participants, selectedParticipants, relevantPersonalSchedules]);
+
+  // Initialize selected participants when team changes or participants are added
+  useEffect(() => {
+    if (participants.length > 0 && selectedTeam) {
+      console.log('PartnerSection: 팀 변경 감지', selectedTeam.team.teamName, '참가자 수:', participants.length);
+
+      const teamId = selectedTeam.team.teamId;
+      const storedParticipants = getSelectedParticipants(teamId);
+      const currentParticipantIds = participants.map(p => p.id);
+
+      // 새로운 참가자가 추가되었는지 확인
+      const hasNewParticipants = currentParticipantIds.some(id => !storedParticipants.includes(id));
+
+      if (storedParticipants.length > 0 && !hasNewParticipants) {
+        // 저장된 선택 상태가 있고 새 참가자가 없으면 복원
+        setSelectedParticipants(storedParticipants);
+      } else {
+        // 없으면 모든 참가자 선택 (새 참가자 포함)
+        console.log('모든 참가자 선택:', currentParticipantIds);
+        setSelectedParticipants(currentParticipantIds);
+        setStoreSelectedParticipants(teamId, currentParticipantIds);
+      }
+    }
+  }, [selectedTeam?.team.teamId, participants, getSelectedParticipants, setStoreSelectedParticipants, selectedTeam]);
+
+  if (!selectedTeam || participants.length === 0) {
+    return (
+      <section className="mb-6">
+        <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          팀을 선택해주세요
+        </h2>
+        <div className="rounded-xl border p-4 text-sm text-muted-foreground">
+          팀을 선택하면 팀원 정보와 시간표가 표시됩니다.
+        </div>
+      </section>
+    );
+  }
+
+  // participants는 이미 위에서 Zustand selector로 정의됨
+
+  const handleParticipantToggle = (participantId: string) => {
+    const newSelectedParticipants = selectedParticipants.includes(participantId)
+      ? selectedParticipants.filter(id => id !== participantId)
+      : [...selectedParticipants, participantId];
+
+    setSelectedParticipants(newSelectedParticipants);
+
+    // 스토어에 저장
+    if (selectedTeam?.team.teamId) {
+      setStoreSelectedParticipants(selectedTeam.team.teamId, newSelectedParticipants);
+    }
+  };
+
+  // 개인 일정 추가 핸들러
+  const handleAddPersonalSchedule = (memberId: string, memberName: string) => {
+    setModalMemberId(memberId);
+    setModalMemberName(memberName);
+    setModalOpen(true);
+  };
+
+  const handlePersonalScheduleSubmit = (schedule: Omit<PersonalSchedule, 'id' | 'memberId'>) => {
+    addPersonalSchedule(modalMemberId, schedule);
+    setModalOpen(false);
+  };
+
+  // 참가자 삭제 핸들러
+  const handleDeleteParticipant = (participantId: string, participantName: string) => {
+    const confirmDelete = window.confirm(
+      `"${participantName}" 참가자를 정말 삭제하시겠습니까?\n\n삭제하면 해당 참가자의 개인일정도 모두 삭제됩니다.`
+    );
+
+    if (confirmDelete) {
+      try {
+        removeParticipantFromCurrentTeam(participantId);
+        console.log(`참가자 ${participantName} (${participantId}) 삭제 완료`);
+      } catch (error) {
+        console.error('참가자 삭제 실패:', error);
+        alert('참가자 삭제에 실패했습니다.');
+      }
+    }
+  };
 
   const getIntensityColor = (count: number) => {
     if (count === 0) return 'bg-transparent';

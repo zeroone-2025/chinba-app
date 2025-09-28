@@ -42,7 +42,7 @@ const Mannaja = () => {
       console.log('추가할 참가자들:', data.participants);
 
       // 각 참가자에게 전역 고유 ID 할당
-      const participantsWithUniqueIds = data.participants.map((participant, index) => {
+      const participantsWithUniqueIds = data.participants.map((participant) => {
         const uniqueId = getNextParticipantId();
         return {
           ...participant,
