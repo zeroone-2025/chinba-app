@@ -3,7 +3,7 @@ import { Users, Plus, Trash2 } from "lucide-react";
 import { useClubStore } from "@/stores/clubStore";
 import TimetableGrid, { DAYS, type TimeSlot } from "@/components/common/TimetableGrid";
 import { Button } from "@/components/ui/button";
-import AddPersonalModal from "./AddPersonalModal";
+import AddPersonalScheduleModal from "./AddPersonalScheduleModal";
 import type { PersonalSchedule } from "@/types";
 
 interface FreeTimeBlock {
@@ -402,8 +402,8 @@ export default function PartnerSection({ onFreeTimeSelect }: PartnerSectionProps
       </div>
 
       {/* 개인 일정 추가 모달 */}
-      <AddPersonalModal
-        open={modalOpen}
+      <AddPersonalScheduleModal
+        isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         memberId={modalMemberId}
         memberName={modalMemberName}

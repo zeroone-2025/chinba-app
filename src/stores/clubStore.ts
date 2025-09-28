@@ -128,17 +128,29 @@ export const useClubStore = create<ClubState>()(
   },
   // 개인일정 관리 액션들
   addPersonalSchedule: (memberId: string, schedule: Omit<PersonalSchedule, 'id' | 'memberId'>) => set((state) => {
+    console.log('=== addPersonalSchedule 시작 ===');
+    console.log('멤버 ID:', memberId);
+    console.log('스케줄 데이터:', schedule);
+
     const newSchedule: PersonalSchedule = {
       ...schedule,
       id: crypto.randomUUID(),
       memberId
     };
-    return {
+
+    console.log('새 스케줄:', newSchedule);
+
+    const updatedSchedules = {
       personalSchedulesByMember: {
         ...state.personalSchedulesByMember,
         [memberId]: [...(state.personalSchedulesByMember[memberId] || []), newSchedule]
       }
     };
+
+    console.log('업데이트된 개인일정:', updatedSchedules.personalSchedulesByMember[memberId]);
+    console.log('=== addPersonalSchedule 완료 ===');
+
+    return updatedSchedules;
   }),
   removePersonalSchedule: (memberId: string, scheduleId: string) => set((state) => ({
     personalSchedulesByMember: {
