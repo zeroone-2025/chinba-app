@@ -77,6 +77,7 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
 
     const timeSlotMap = new Map<string, TimeSlot>();
 
+    // 참가자들의 기본 시간표 처리
     participants.forEach(participant => {
       participant.timetable.forEach(slot => {
         const [startTime, endTime] = slot.time.split('-');
@@ -102,8 +103,35 @@ const AddActivityModal = ({ isOpen, onClose, selectedTeam }: AddActivityModalPro
       });
     });
 
+    // 개인 일정 처리
+    participants.forEach(participant => {
+      const personalSchedules = clubStore.personalSchedulesByMember[participant.id] || [];
+      personalSchedules.forEach(schedule => {
+        const scheduleDate = new Date(schedule.date);
+        const dayIndex = scheduleDate.getDay();
+        const dayName = DAYS[dayIndex];
+
+        for (let hour = schedule.startHour; hour < schedule.endHour; hour++) {
+          const timeSlot = `${hour.toString().padStart(2, '0')}:00-${(hour + 1).toString().padStart(2, '0')}:00`;
+          const key = `${dayName}-${timeSlot}`;
+
+          if (!timeSlotMap.has(key)) {
+            timeSlotMap.set(key, {
+              day: dayName,
+              time: timeSlot,
+              count: 0,
+              participants: []
+            });
+          }
+          const existing = timeSlotMap.get(key)!;
+          existing.count++;
+          existing.participants.push(`${participant.name} (개인일정)`);
+        }
+      });
+    });
+
     return timeSlotMap;
-  }, [selectedTeam, clubStore.selectedTeam?.team.participants, clubStore.selectedTeam?.team.teamId, clubStore]);
+  }, [selectedTeam, clubStore.selectedTeam?.team.participants, clubStore.selectedTeam?.team.teamId, clubStore.personalSchedulesByMember, clubStore]);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

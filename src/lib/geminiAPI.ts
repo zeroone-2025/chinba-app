@@ -74,35 +74,42 @@ export async function analyzeTimetableImage(file: File): Promise<ExtractedTimeta
     // Gemini 모델 선택 (vision 기능을 위해 gemini-1.5-pro 사용)
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-    const prompt = `이 이미지를 분석해서 시간표 정보를 추출해주세요. 대학교 시간표가 있을 것입니다.
+    const prompt = `이 이미지는 대학교 시간표입니다. 시간표에서 모든 수업 정보를 추출해주세요.
 
-다음 JSON 형식으로만 응답해주세요:
+시간표 읽기 지침:
+- 표 형태로 되어 있으며, 세로축은 시간, 가로축은 요일입니다
+- 각 칸에는 과목명과 강의실이 적혀 있습니다
+- 시간은 보통 9시부터 시작하여 오후까지 있습니다
+- 빈 칸은 수업이 없는 시간입니다
+
+다음 JSON 형식으로만 응답해주세요 (마크다운 없이):
 
 {
   "participants": [
     {
       "id": "S001",
-      "name": "학생이름",
+      "name": "학생1",
       "timetable": [
         {
           "day": "월",
-          "time": "09:00-11:00",
+          "time": "09:00-10:00",
           "subject": "과목명",
-          "location": "강의실위치"
+          "location": "강의실"
         }
       ]
     }
   ]
 }
 
-규칙:
-1. 요일은 월,화,수,목,금,토,일 중 하나
-2. 시간은 HH:MM-HH:MM 형식
-3. 학생 이름이 없으면 학생1로 설정
-4. ID는 S001 형식
-5. 순수 JSON만 응답 (마크다운 없이)
+중요한 규칙:
+1. 요일: "월", "화", "수", "목", "금" 중 하나만 사용
+2. 시간: "HH:MM-HH:MM" 형식 (예: "09:00-10:00", "13:00-15:00")
+3. 과목명: 이미지에서 보이는 그대로 추출
+4. 강의실: 이미지에서 보이는 그대로 추출 (없으면 빈 문자열)
+5. 학생 이름이 없으면 "학생1"로 설정
+6. 연속된 시간의 같은 과목은 하나로 합쳐서 기록 (예: 9-10시, 10-11시 같은 과목 → "09:00-11:00")
 
-시간표에서 모든 수업을 찾아서 배열에 넣어주세요.`;
+응답은 반드시 유효한 JSON만 작성하세요.`;
 
     const imagePart = {
       inlineData: {
@@ -123,12 +130,12 @@ export async function analyzeTimetableImage(file: File): Promise<ExtractedTimeta
 
     // JSON 응답 파싱
     try {
-      console.log('Gemini API 응답:', text); // 디버깅용
+      console.log('Gemini API 원본 응답:', text); // 디버깅용
 
       // 응답에서 JSON 부분만 추출
       let jsonText = text.trim();
 
-      // 마크다운 코드 블록 제거
+      // 1. 마크다운 코드 블록 제거
       if (jsonText.includes('```json')) {
         const jsonMatch = jsonText.match(/```json\s*([\s\S]*?)\s*```/);
         if (jsonMatch) {
@@ -141,15 +148,24 @@ export async function analyzeTimetableImage(file: File): Promise<ExtractedTimeta
         }
       }
 
-      // JSON 객체만 추출
-      const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        jsonText = jsonMatch[0];
+      // 2. 중괄호로 시작하는 JSON 객체 찾기
+      const startIndex = jsonText.indexOf('{');
+      const lastIndex = jsonText.lastIndexOf('}');
+      if (startIndex !== -1 && lastIndex !== -1 && lastIndex > startIndex) {
+        jsonText = jsonText.substring(startIndex, lastIndex + 1);
       }
 
-      console.log('파싱할 JSON:', jsonText); // 디버깅용
+      // 3. 일반적인 JSON 오류 수정
+      jsonText = jsonText
+        .replace(/,\s*}/g, '}')  // 마지막 쉼표 제거
+        .replace(/,\s*]/g, ']')  // 배열 마지막 쉼표 제거
+        .replace(/\n/g, ' ')     // 줄바꿈 제거
+        .replace(/\s+/g, ' ')    // 연속 공백 제거
+        .trim();
 
-      const parsedData = JSON.parse(jsonText.trim()) as ExtractedTimetableData;
+      console.log('정제된 JSON:', jsonText); // 디버깅용
+
+      const parsedData = JSON.parse(jsonText) as ExtractedTimetableData;
 
       // 데이터 유효성 검증
       if (!parsedData.participants || !Array.isArray(parsedData.participants)) {

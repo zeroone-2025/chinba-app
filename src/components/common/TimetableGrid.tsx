@@ -132,12 +132,10 @@ export default function TimetableGrid({
       });
     });
 
-    // 2. 개인일정 처리 - 선택된 참가자들의 개인일정만 포함
+    // 2. 개인일정 처리 - 전달받은 모든 개인일정 포함
     personalSchedules.forEach(schedule => {
-      // 해당 개인일정의 소유자가 선택된 참가자인지 확인
-      if (!selectedParticipantIds.includes(schedule.memberId)) return;
-
-      const participant = selectedParticipants.find(p => p.id === schedule.memberId);
+      // 참가자 정보 찾기 (선택되지 않은 참가자도 포함)
+      const participant = participants.find(p => p.id === schedule.memberId);
       if (!participant) return;
 
       // 날짜를 요일로 변환
@@ -252,12 +250,8 @@ export default function TimetableGrid({
             // Dynamic class calculation
             let cellClasses = 'p-2 text-xs border-r last:border-r-0 min-h-[40px] select-none relative';
 
-            // Base color (original logic)
-            if (count === 0 && showFree) {
-              cellClasses += ' bg-green-100';
-            } else {
-              cellClasses += ` ${getIntensityColor(count, day, timeSlot)}`;
-            }
+            // Base color (always use getIntensityColor for consistency)
+            cellClasses += ` ${getIntensityColor(count, day, timeSlot)}`;
 
             // Drag preview overlay (highest priority when dragging)
             if (isInDragPreviewArea && count === 0) {
